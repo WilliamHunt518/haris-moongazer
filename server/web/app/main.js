@@ -293,7 +293,7 @@ var simulator = {
                         if (self.state.attributes.prov_doc == null) {
                             var api = new $.provStoreApi({
                                 username: 'atomicorchid',
-                                key: '2ce8131697d4edfcb22e701e78d72f512a94d310'
+                                key: '' /* ProvStore upload is disabled; key removed */
                             });
                             var ps = new PostService();
                             ps.initProv(api, 'uav_silver_commander', self.state.getGameId());

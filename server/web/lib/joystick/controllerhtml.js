@@ -25,7 +25,7 @@ $(document).ready(function () {
     var moving;
     var game_id;
     var provdoc=null;
-    var api = new $.provStoreApi({ username: 'atomicorchid', key: '2ce8131697d4edfcb22e701e78d72f512a94d310' });
+    var api = new $.provStoreApi({ username: 'atomicorchid', key: '' /* ProvStore upload is disabled; key removed */ });
     var ps = PostService();
 
     // ros
