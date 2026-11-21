@@ -9,7 +9,12 @@ function menuInit() {
         setTimeout(function () { el.fadeOut(300); }, 3500);
     };
 
+    // One launch per page: a second click (or a click on another tile) while one is loading is ignored,
+    // otherwise the later scenario silently replaces the first on the server.
+    var launching = false;
     var launchScenario = function (fileName, button) {
+        if (launching) return;
+        launching = true;
         if (button) button.prop("disabled", true).text("Loading…");
         // Reset first: loading a scenario on top of another one fails on the server.
         // Then set the engine tick rate for the chosen look (classic keeps the original 5 Hz).
@@ -18,6 +23,7 @@ function menuInit() {
                 $.post('/mode/scenario', {'file-name': fileName}, function () {
                     window.location = "/sandbox.html";
                 }).fail(function () {
+                    launching = false;
                     if (button) button.prop("disabled", false).text("Launch");
                     showError("Unable to load " + fileName + ".");
                 });
@@ -101,10 +107,12 @@ function menuInit() {
     // ------ Sandbox ------
     $("#sandboxMedia").on('click', function () { $("#buttonSandboxMode").click(); });
     $("#buttonSandboxMode").on('click', function () {
+        if (launching) return;
+        launching = true;
         setLookTiming().always(function () {
             $.post('/mode/sandbox', function () {
                 window.location = "/sandbox.html";
-            }).fail(function () { showError("Unable to open the sandbox."); });
+            }).fail(function () { launching = false; showError("Unable to open the sandbox."); });
         });
     });
 
@@ -169,11 +177,10 @@ function menuInit() {
     });
 
     $.get("/mode/in-progress", {}, function (data) {
+        // No reset here when nothing is running: every launch resets first, and a reset sent from page load
+        // could land after a quick click's scenario load and wipe it.
         if (String(data) === 'true') {
             $("#inProgressBanner").prop("hidden", false);
-        } else {
-            // Ensure any scenario is loaded with a clean slate
-            $.post('/reset');
         }
     }).fail(function () {
         showError("Unable to connect to the server.");

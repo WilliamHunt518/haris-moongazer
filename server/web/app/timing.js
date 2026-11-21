@@ -36,6 +36,8 @@ var SimTiming = {
             var p = self.pending;
             self.pending = null;
             self.timer = null;
+            // Ignore server values for a moment so a state fetched before this lands can't snap the slider back
+            self.holdUntil = Date.now() + 800;
             $.post("/mode/timing", p);
         }, 120);
     },
@@ -47,7 +49,7 @@ var SimTiming = {
 
     /** Called after each state fetch: show the server's values unless the user is dragging. */
     sync: function (state) {
-        if (!this.$speed || !this.$speed.length || this.dragging || this.pending) return;
+        if (!this.$speed || !this.$speed.length || this.dragging || this.pending || Date.now() < (this.holdUntil || 0)) return;
         var speed = state.get("simSpeed"), rate = state.get("tickRate");
         if (speed == null || rate == null) return;
         var idx = 0, best = Infinity;
