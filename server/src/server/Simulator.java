@@ -53,9 +53,14 @@ public class Simulator {
 
     public static Simulator instance;
 
-    private static final double highTickRate = 5;  // We are updating the sim 5 times per second
+    /** Tick rate the per-tick constants were written for. Per-tick quantities scale by BASE_TICK_RATE / tick rate. */
+    public static final double BASE_TICK_RATE = 5;
+    public static final double DEFAULT_TICK_RATE = 10;
+    public static final double MIN_TICK_RATE = 2, MAX_TICK_RATE = 30;
+    public static final double MIN_SIM_SPEED = 0.25, MAX_SIM_SPEED = 8;
+    private volatile double highTickRate = DEFAULT_TICK_RATE;  // Sim updates per simulated second
     private static final double lowTickRate = 1;  // Certain functions can be checked less often (once per second)
-    private static final double gameSpeed = 5;  // We are running at 5x real speed
+    private volatile double simSpeed = 1;  // Simulated seconds per real second
     private final Random random;
 
     private Thread mainLoopThread;
@@ -175,12 +180,14 @@ public class Simulator {
     }
 
     private void mainLoop() {
-        final double waitTime = (int) (1000/(highTickRate)); //When gameSpeed is 1, should be 200ms.
         int lowTickCounter = 0;  // Slightly clumsy, but a quick way to only check every 5th step for an addition
         int sleepTime;
         do {
             long startTime = System.currentTimeMillis();
-            state.incrementTime(1 / highTickRate);
+            // Read once per tick so the live sliders can change these between ticks
+            final double tickRate = highTickRate;
+            final double waitTime = 1000.0 / (tickRate * simSpeed);
+            state.incrementTime(1 / tickRate);
             //if (state.getScenarioEndTime() !=0 && System.currentTimeMillis() >= state.getScenarioEndTime()) {
             if (state.getTimeLimit() != 0 && state.getTime() >= state.getTimeLimit()) {
                 System.out.println("DONE BY TIME: " + state.getTime());
@@ -216,7 +223,7 @@ public class Simulator {
 
             // Decide if we should spawn a new task
             lowTickCounter++;
-            if (lowTickCounter == lowTickRate * highTickRate) {
+            if (lowTickCounter >= Math.round(lowTickRate * tickRate)) {
                 if (missionController != null) {
                     missionController.spawnIfRequired(state.getTime());
                 }
@@ -763,6 +770,11 @@ public class Simulator {
             }
 
             this.state.resetNext();
+            // Each scenario starts at normal speed; it may ask for its own tick rate (e.g. 5 for the classic feel)
+            Double scenarioTickRate = null;
+            if (GsonUtils.hasKey(obj, "tickRate") && GsonUtils.getValue(obj, "tickRate") instanceof Double d)
+                scenarioTickRate = d;
+            setTiming(1.0, scenarioTickRate);
             if(GsonUtils.hasKey(obj,"timeLimitSeconds")){
                 Object timeLimitSeconds = GsonUtils.getValue(obj, "timeLimitSeconds");
                 if(timeLimitSeconds.getClass() == Double.class) {
@@ -1012,7 +1024,7 @@ public class Simulator {
 
             }
 
-            this.state.setGameSpeed((int) gameSpeed);
+            this.state.setGameSpeed((int) BASE_TICK_RATE);
 
             return true;
         } catch (IOException e) {
@@ -1127,7 +1139,28 @@ public class Simulator {
     }
 
     public double getStepScale() {
-        return gameSpeed / highTickRate;
+        return BASE_TICK_RATE / highTickRate;
+    }
+
+    /** Fraction of a 5 Hz tick that one tick represents (1 at 5 Hz, 0.5 at 10 Hz). */
+    public double getTickFraction() {
+        return BASE_TICK_RATE / highTickRate;
+    }
+
+    public double getSimSpeed() {
+        return simSpeed;
+    }
+
+    /**
+     * Change the simulation speed and tick rate while it runs. Values are clamped to the supported range.
+     * Behaviour per simulated second stays the same; only smoothness (tick rate) and pace (speed) change.
+     */
+    public synchronized void setTiming(Double speed, Double tickRate) {
+        if (speed != null && !speed.isNaN())
+            simSpeed = Math.max(MIN_SIM_SPEED, Math.min(MAX_SIM_SPEED, speed));
+        if (tickRate != null && !tickRate.isNaN())
+            highTickRate = Math.max(MIN_TICK_RATE, Math.min(MAX_TICK_RATE, Math.round(tickRate)));
+        state.setTiming(simSpeed, highTickRate);
     }
 
     public void incrementCompletedTargets() {

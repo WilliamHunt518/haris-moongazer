@@ -19,7 +19,8 @@ public abstract class Agent extends MObject implements Serializable {
     private static final Logger LOGGER = Logger.getLogger(Agent.class.getName());
 
     private static final long serialVersionUID = 5561040348988016571L;
-    protected double unitTurningAngle = 0.1d; //Radians
+    /** Max heading change per tick; scales with step size so turning per second is tick-rate independent. */
+    protected static double unitTurningAngle() { return 0.5d * Simulator.instance.getStepScale(); }
     //static final float unitTimeBatteryConsumption = 0.00025F;
     static final float unitTimeBatteryConsumption = 0.000025F;
     // Study-era engine (dev_verification, used by the PFM studies): 5 m per sim-second at 5x time, and
@@ -30,13 +31,15 @@ public abstract class Agent extends MObject implements Serializable {
 
     /** Base battery drain per tick, matching the study-era drain per real second when legacy physics is on. */
     protected static double baseBatteryPerTick() {
-        return Simulator.instance.getState().isLegacyStudyPhysics()
+        double perBaseTick = Simulator.instance.getState().isLegacyStudyPhysics()
                 ? LEGACY_BATTERY_PER_TICK * LEGACY_TICKS_PER_TICK : unitTimeBatteryConsumption;
+        return perBaseTick * Simulator.instance.getTickFraction();
     }
 
     /** Multiplier for per-tick battery variance and noise, so legacy scenarios keep their per-second values. */
     protected static double perTickScale() {
-        return Simulator.instance.getState().isLegacyStudyPhysics() ? LEGACY_TICKS_PER_TICK : 1.0;
+        return (Simulator.instance.getState().isLegacyStudyPhysics() ? LEGACY_TICKS_PER_TICK : 1.0)
+                * Simulator.instance.getTickFraction();
     }
     private static final double EPS = 1e-5;
 
@@ -76,7 +79,6 @@ public abstract class Agent extends MObject implements Serializable {
         // DJI Phantom 4 Pro V2.0 S-Mode = 20.1168 m/s
         // DJI Mavic 3 C-Mode = 5 m/s
         speed = Simulator.instance.getState().isLegacyStudyPhysics() ? LEGACY_SPEED : 12.0;
-        unitTurningAngle = (0.5d * Simulator.instance.getStepScale());
         heading = 0.0;
         battery = 1.0;
         altitude = 3.0;
@@ -122,7 +124,7 @@ public abstract class Agent extends MObject implements Serializable {
             if (!route.isEmpty() && !isCurrentDestinationReached()) {
                 if (!getSearching()) {
                     moveTowardsDestination();
-                    timeInAir += 0.2;
+                    timeInAir += 1.0 / Simulator.instance.getTickRate();
                 }
                 if (isCurrentDestinationReached() && this.route.size() > 1)
                     this.route.remove(0);
@@ -142,7 +144,7 @@ public abstract class Agent extends MObject implements Serializable {
     }
 
     public void incrementTimeInAir(){
-        timeInAir += 0.2;
+        timeInAir += 1.0 / Simulator.instance.getTickRate();
     }
 
     /**
@@ -404,32 +406,32 @@ public abstract class Agent extends MObject implements Serializable {
                     if (targetDir > 0) {
                         if (aHeading > 0) {
                             if (targetDir > aHeading) {
-                                aHeading = aHeading + unitTurningAngle;
+                                aHeading = aHeading + unitTurningAngle();
                             } else {
-                                aHeading = aHeading - unitTurningAngle;
+                                aHeading = aHeading - unitTurningAngle();
                             }
                         } else if (aHeading < 0 && (targetDir - aHeading > Math.PI)) {
-                            aHeading = (aHeading - unitTurningAngle);
+                            aHeading = (aHeading - unitTurningAngle());
                             if (aHeading < 0 - Math.PI) {
                                 aHeading = Math.PI + (aHeading % Math.PI);
                             }
                         } else {
-                            aHeading = aHeading + unitTurningAngle;
+                            aHeading = aHeading + unitTurningAngle();
                         }
                     } else if (targetDir <= 0) {
                         if (aHeading < 0) {
                             if (targetDir > aHeading) {
-                                aHeading = aHeading + unitTurningAngle;
+                                aHeading = aHeading + unitTurningAngle();
                             } else {
-                                aHeading = aHeading - unitTurningAngle;
+                                aHeading = aHeading - unitTurningAngle();
                             }
                         } else if (aHeading > 0 && (aHeading - targetDir > Math.PI)) {
-                            aHeading = aHeading + unitTurningAngle;
+                            aHeading = aHeading + unitTurningAngle();
                             if (aHeading > Math.PI) {
                                 aHeading = 0 - Math.PI + (aHeading % Math.PI);
                             }
                         } else {
-                            aHeading = aHeading - unitTurningAngle;
+                            aHeading = aHeading - unitTurningAngle();
                         }
                     }
 

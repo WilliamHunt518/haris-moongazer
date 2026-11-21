@@ -18,8 +18,11 @@
 
     <link rel="stylesheet" type="text/css" href="http://w2ui.com/src/w2ui-1.4.min.css"/>
     <!-- HARIS Moongazer theme: restyles only, loaded last -->
-    <link rel="stylesheet" href="theme/tokens.css"/>
-    <link rel="stylesheet" href="theme/sandbox.css"/>
+    <link rel="stylesheet" href="theme/tokens.css" data-mg-theme/>
+    <link rel="stylesheet" href="theme/sandbox.css" data-mg-theme/>
+    <!-- Classic look (?look=classic or the launch page switch) turns the two theme stylesheets off -->
+    <script src="theme/look.js"></script>
+    <link rel="icon" href="theme/hare.svg" type="image/svg+xml"/>
     <!-- 20230822_1501h - Ayo Abioye (a.o.abioye@soton.ac.uk) added loading spinner to completion time prediction -->
     <style>
         .loader {
@@ -152,8 +155,8 @@
 <!-- Control Panel -->
 <div class="ui-layout-east">
     <div id="control">
-        <a class="mg-panel-brand" href="/" title="Back to scenarios">
-            <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="#0d2a40"/><path d="M20.5 6.5a10 10 0 1 0 5 13.2A8 8 0 1 1 20.5 6.5z" fill="#ffaf46"/></svg>
+        <a class="mg-panel-brand mg-modern-only" href="/" title="Back to scenarios">
+            <svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="31" fill="#0d2a40"/><g fill="#ffaf46"><path d="M13 51c-3-10 2-19 11-21 5-1 9-1.5 11.5-4.5 2.2-3 3.4-7 6.5-10l5.5 3c-1.5 3-1.2 6-.2 9.5 1.2 4.5 0 8.5-3.3 11.5L41 51z"/><path d="M40.5 41.5c1.8 2.5 2.3 6 2.5 9.5h-5z"/><ellipse cx="45.5" cy="14.5" rx="6" ry="4.2" transform="rotate(-62 45.5 14.5)"/><ellipse cx="34.6" cy="17.8" rx="11" ry="2.4" transform="rotate(33 34.6 17.8)"/><ellipse cx="36.4" cy="14.4" rx="10" ry="2.1" transform="rotate(21 36.4 14.4)"/><circle cx="12" cy="45" r="3.2"/><path d="M10.5 49.5h21c2 0 3 1.6 2 3h-22z"/></g><circle cx="46.2" cy="15.6" r="1" fill="#0d2a40"/><path d="M51.5 8l.9 2.4 2.4.9-2.4.9-.9 2.4-.9-2.4-2.4-.9 2.4-.9z" fill="#fff"/></svg>
             <span><strong>HARIS</strong> Moongazer</span>
             <span class="mg-panel-home">← Scenarios</span>
         </a>
@@ -519,6 +522,19 @@
                 <input id="prediction_slider" type="range" min="0" max="20" value="0" class="slider">Path Prediction Length</input><br>
             </div>
 
+        </div>
+        <!-- Live simulation timing (app/timing.js) -->
+        <div id="sim_timing" class="game_info_item" style="text-align: left;">
+            <label class="mg-timing-row" title="Simulated seconds per real second">
+                <span>Speed</span>
+                <input id="sim_speed" type="range" min="0" max="5" step="1" value="2">
+                <output id="sim_speed_val">×1</output>
+            </label>
+            <label class="mg-timing-row" title="Engine updates per simulated second. Higher is smoother; behaviour per second is the same.">
+                <span>Tick rate</span>
+                <input id="sim_tickrate" type="range" min="2" max="30" step="1" value="10">
+                <output id="sim_tickrate_val">10 Hz</output>
+            </label>
         </div>
     </div>
 

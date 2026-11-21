@@ -31,6 +31,11 @@ public class CommunicationHandler {
     private final List<Coordinate> foundTargets;
 
     private Coordinate home;
+    /** Timeouts are written in 5 Hz ticks; convert to the current tick rate so they keep their length in seconds. */
+    private static int scaledTicks(int baseTicks) {
+        return Math.max(1, (int) Math.round(baseTicks / Simulator.instance.getTickFraction()));
+    }
+
     private int stepCounter = 0;
     private int pingCounter = 0;
 
@@ -54,7 +59,7 @@ public class CommunicationHandler {
             // Must perform setup on the first step, otherwise they can't find each other
             agent.setNetworkID(agent.generateRandomTag());
             declareSelf(communicationRange);
-        } else if (pingCounter >= pingTimeout) {
+        } else if (pingCounter >= scaledTicks(pingTimeout)) {
             declareSelf(communicationRange);
             checkForTargets(); // TODO this check may not be needed for virtuals
             declareTargets(communicationRange);
@@ -233,7 +238,7 @@ public class CommunicationHandler {
                     ProgrammerHandler.Position neighbourNewPos = new ProgrammerHandler.Position(new Coordinate(Double.parseDouble(locX), Double.parseDouble(locY)), Double.parseDouble(heading), Boolean.parseBoolean(stopped), false, Integer.parseInt(timeStamp));
                     if (!neighbours.containsKey(id) ||
                             (neighbours.get(id).getDirectlyConnected()
-                                    && neighbours.get(id).getLastUpdateTime() + AGENT_TIMEOUT < stepCounter)) {
+                                    && neighbours.get(id).getLastUpdateTime() + scaledTicks(AGENT_TIMEOUT) < stepCounter)) {
                         // Either we have no existing record of this at all, in which case we add it as INHERITED,
                         //  or we consider it connected, but it was last updated directly too long ago. Disconnect but
                         //  record as inherited

@@ -19,10 +19,20 @@ html, body {
 .mg-topbar { background: var(--mg-navy); color: #fff; }
 .mg-topbar-inner { display: flex; align-items: center; gap: 20px; height: 60px; }
 .mg-brand { display: flex; align-items: center; gap: 10px; color: #fff; text-decoration: none; }
-.mg-mark { width: 30px; height: 30px; }
+.mg-mark { width: 34px; height: 34px; }
 .mg-brand-text { font-size: 18px; letter-spacing: .01em; font-weight: 400; }
 .mg-brand-text strong { font-weight: 700; letter-spacing: .04em; }
 .mg-topbar-sub { color: #b9cfdd; font-size: 13px; border-left: 1px solid rgba(255,255,255,.2); padding-left: 20px; }
+.mg-look { margin-left: auto; display: flex; align-items: center; gap: 2px; font-size: 13px; }
+.mg-look span { color: #b9cfdd; margin-right: 8px; }
+.mg-look button {
+    font: inherit; font-size: 13px; padding: 4px 12px; cursor: pointer; color: #dbe7ef;
+    background: transparent; border: 1px solid rgba(255,255,255,.28);
+}
+.mg-look button:first-of-type { border-radius: 99px 0 0 99px; }
+.mg-look button:last-of-type { border-radius: 0 99px 99px 0; border-left: 0; }
+.mg-look button[aria-pressed="true"] { background: var(--mg-orange-300); border-color: var(--mg-orange-300); color: var(--mg-navy-900); font-weight: 600; }
+.mg-look button:focus-visible { outline: 3px solid var(--mg-blue-300); outline-offset: 2px; }
 
 /* Intro */
 .mg-intro { padding: 36px 0 20px; max-width: 720px; }
@@ -135,6 +145,7 @@ code { font-family: var(--mg-mono); font-size: .9em; background: var(--mg-blue-5
 
 @media (max-width: 720px) {
     .mg-topbar-sub { display: none; }
+    .mg-look span { display: none; }
     .mg-grid { grid-template-columns: 1fr; }
     .mg-wrap { padding: 0 16px; }
 }

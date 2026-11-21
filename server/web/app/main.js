@@ -263,17 +263,19 @@ var simulator = {
             position: 'bottom-left',
             autoclose: 5000
         };
+        SimTiming.init();
         this.run();
     },
     run: function () {
         try {
 
 
-            var waitTime = 400;
             var self = this;
+            var waitTime = SimTiming.pollInterval(this.state);
             var startTime = (new Date()).getTime();
             this.state.fetch()
                 .done(function () {
+                    SimTiming.sync(self.state);
                     if (!self.initialisedState) {
                         self.initialisedState = true;
                         MapController.swapMode(self.state.getEditMode(), false);

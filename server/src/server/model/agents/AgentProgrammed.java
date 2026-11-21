@@ -246,16 +246,16 @@ public class AgentProgrammed extends Agent {
         else
             diffCW = diffCCW = 0;
 
-        if(Math.min(diffCW, diffCCW) <= unitTurningAngle) {
+        if(Math.min(diffCW, diffCCW) <= unitTurningAngle()) {
             hdgRad = angleToGoal;
             isAligned = true;
         }
         else {
             //Move in direction with smallest difference
             if(diffCW < diffCCW)
-                hdgRad += unitTurningAngle;
+                hdgRad += unitTurningAngle();
             else
-                hdgRad -= unitTurningAngle;
+                hdgRad -= unitTurningAngle();
             isAligned = false;
         }
 

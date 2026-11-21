@@ -749,6 +749,22 @@ App.Views.Map = Backbone.View.extend({
     },
 
      */
+    /**
+     * Where an allocation line starts: a fixed number of screen pixels from the agent towards its first waypoint.
+     * (This used to be 50 m along the agent's heading, which was wrong while the agent was turning and at most
+     * zoom levels.) Never more than half the first leg, so short legs still show.
+     */
+    ALLOCATION_LINE_GAP_PX: 20,
+    allocationLineStart: function (from, towards) {
+        var zoom = this.map && this.map.getZoom ? this.map.getZoom() : null;
+        if (!towards || zoom == null) return from;
+        var sph = google.maps.geometry.spherical;
+        var leg = sph.computeDistanceBetween(from, towards);
+        var metresPerPx = 156543.03392 * Math.cos(from.lat() * Math.PI / 180) / Math.pow(2, zoom);
+        var gap = Math.min(this.ALLOCATION_LINE_GAP_PX * metresPerPx, leg / 2);
+        if (!(gap > 0)) return from;
+        return sph.computeOffset(from, gap, sph.computeHeading(from, towards));
+    },
     drawAllocation: function (lineId, lineColour, agentId, taskId) {
         var self = this;
         var isTempLine = lineId.endsWith('temp');
@@ -757,46 +773,12 @@ App.Views.Map = Backbone.View.extend({
         var polyline = this.$el.gmap("get", "overlays > Polyline", [])[lineId];
 
 
-        var coordinate = agent.getPosition()
-        //alert(agent.getHeading())
-
-        /*
-        var thetaRadians = (agent.getHeading() + 90) * Math.PI / 180;
-
-        var yOff = 50 * Math.sin(thetaRadians);
-        var xOff = 50 * Math.cos(thetaRadians);
-
-        var lat = coordinate.lat() + yOff / (60.0 * 1852.0);
-        var lng = coordinate.lng() + xOff / (60.0 * 1852.0)// * Math.cos(coordinate.lat() * Math.PI / 180.0));
-        */
-        var theta = agent.getHeading();
-        var lat = coordinate.lat();
-        var lng = coordinate.lng();
-
-        var delta = 50 / 6371000; // Distance/radius = angular distance in radians
-        var thetaRad = theta * Math.PI / 180; // Convert theta to radians
-
-        // Convert latitude to radians
-        var latRad = lat * Math.PI / 180;
-
-        // Calculate new latitude
-        var newLatRad = Math.asin(Math.sin(latRad) * Math.cos(delta) +
-            Math.cos(latRad) * Math.sin(delta) * Math.cos(thetaRad));
-
-        // Calculate new longitude
-        var newLngRad = lng * Math.PI / 180 + Math.atan2(Math.sin(thetaRad) * Math.sin(delta) * Math.cos(latRad),
-            Math.cos(delta) - Math.sin(latRad) * Math.sin(newLatRad));
-
-        // Convert radians back to degrees
-        var newLat = newLatRad * 180 / Math.PI;
-        var newLng = newLngRad * 180 / Math.PI;
-
-        var path = [new google.maps.LatLng(newLat, newLng)];//[agent.getPosition()];
         var route = isTempLine ? agent.getTempRoute() : agent.getRoute();
         var convertedRoute = route.map(function (c) {
             return new google.maps.LatLng(c.latitude, c.longitude);
         });
-        path = path.concat(convertedRoute);
+        // Start the line just outside the agent's icon, along its first leg, so it never draws over the agent
+        var path = [this.allocationLineStart(agent.getPosition(), convertedRoute[0])].concat(convertedRoute);
 
 
 
