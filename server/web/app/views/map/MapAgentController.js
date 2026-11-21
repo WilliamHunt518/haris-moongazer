@@ -186,6 +186,20 @@ var MapAgentController = {
     },
     onAgentRemove: function (agent) {
         console.log('Agent removed ' + agent.getId());
+
+        var uid = agent.getId() + "_removed";
+        var content = _.template($("#popup_left_right").html(), {
+            left_content: agent.getId() + " has been removed",
+            right_content: "View",
+            uid: uid
+        });
+
+        spop({
+            template: content,
+            style: 'default'
+        });
+
+
         var marker = this.$el.gmap("get", "markers")[agent.getId()];
         if (marker) {
             marker.setMap(null);
@@ -433,8 +447,7 @@ var MapAgentController = {
         var canvas;
         if(canvasEl.length) {
             canvas = canvasEl[0];
-        }
-        else {
+        } else {
             canvas = document.createElement('canvas');
             canvas.id = id;
             canvas.width = container.width();
@@ -452,6 +465,7 @@ var MapAgentController = {
         ctx.filter = 'hue-rotate(' + (10 + batteryLevel*100) + 'deg) brightness(1.5)';
         ctx.fillStyle = "red";
         ctx.fillRect(5, 71, batteryWidth, 4);
+
 
         container.css({
             'overflow': 'visible'

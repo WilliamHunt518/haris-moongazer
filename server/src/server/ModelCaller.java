@@ -1,100 +1,120 @@
 package server;
 
 import server.model.agents.AgentVirtual;
+import verification.Model;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 
-/**
- * Calls the PRISM model script and handles the results
- * @author William Hunt
- */
 public class ModelCaller {
+    private double confidence = 0.995;
+    /**
+     * The PRISM model was calibrated on the study-era engine (dev_verification), whose simulation clock ran at
+     * 5x real time (25 ticks/s, 0.2 sim-s per tick). Results are converted to the current clock (real seconds).
+     */
+    public static final double LEGACY_SIM_SECONDS_PER_SECOND = 5.0;
     private Thread currentThread = null;
     private Thread underThread = null;
     private Thread overThread = null;
-    private final Logger LOGGER = Logger.getLogger(ModelCaller.class.getName());
+    ArrayList<ArrayList<double[][]>> currentConfig = null;
+    Model[] models = new Model[3];
+    private Logger LOGGER = Logger.getLogger(ModelCaller.class.getName());
+    private String style = "justOn";
     private String webRef;
-
-    private Process[] procs = new Process[3];
     private int currentSalt;
-    private boolean debugMode = false;
+    private double startTime;
+    private int samples = 1000;
+    private boolean isDummy;
+    private int delayTime;
+    private int delayBound;
+    private boolean isEnabled = false;
+    private int autoRunFrequency = 0;
+    private double nextAutoRun = 0;
 
     public void reset() {
-        Simulator.instance.getState().setModelStyle("off");
+        style = "justOn";
         currentThread = null;
         underThread = null;
         overThread = null;
         Simulator.instance.getState().setMissionSuccessChance(-1);
         Simulator.instance.getState().setMissionSuccessOverChance(-1);
         Simulator.instance.getState().setMissionSuccessUnderChance(-1);
+        // Don't let a later scenario inherit PFM settings from the previous one
+        isEnabled = false;
+        autoRunFrequency = 0;
+        nextAutoRun = 0;
     }
 
     /**
      * Starts the first run, which in turn runs 1 over and 1 under.
      * Also side effects the chances in State.
      */
-    public void startThread(String webRef) {
-        if (!Simulator.instance.getState().getModelStyle().equals("off")) {
+    public void startThread(String webRef, ArrayList<ArrayList<double[][]>> config) {
+        nextAutoRun = Simulator.instance.getState().getTime() + autoRunFrequency;
+        if (isEnabled) {
             currentSalt = Simulator.instance.getRandom().nextInt(10000);
+            startTime = Simulator.instance.getState().getTime();
             this.webRef = webRef;
             // TODO edit the prediction python to take arguments of files, then we can run all 3 in parallel
             if (currentThread != null) {
                 //System.out.println("INTERRUPTING");
-                procs[1].destroy();
                 //System.out.println("dest");
+                models[1].cancel();
                 currentThread.interrupt();
                 currentThread = null;
             }
             if (underThread != null) {
-                procs[0].destroy();
+                models[0].cancel();
                 underThread.interrupt();
                 underThread = null;
             }
             if (overThread != null) {
-                procs[2].destroy();
+                models[2].cancel();
                 overThread.interrupt();
                 overThread = null;
+            }
+
+            currentConfig = config;
+            currentThread = new Thread(this::runOn);
+            // TODO not properly interrupted
+            currentThread.start();
+
+            if (style.equals("parallel")) {
+                underThread = new Thread(this::runUnder);
+                underThread.start();
+                overThread = new Thread(this::runOver);
+                overThread.start();
             }
 
             Simulator.instance.getState().setMissionSuccessChance(-1);
             Simulator.instance.getState().setMissionSuccessOverChance(-1);
             Simulator.instance.getState().setMissionSuccessUnderChance(-1);
 
-            Simulator.instance.getState().setMissionBoundedSuccessChance(-1);
-            Simulator.instance.getState().setMissionBoundedSuccessOverChance(-1);
-            Simulator.instance.getState().setMissionBoundedSuccessUnderChance(-1);
-
-            currentThread = new Thread(this::runOn);
-            // TODO not properly interrupted
-            currentThread.start();
-            if (Simulator.instance.getState().getModelStyle().equals("parallel")) {
-                underThread = new Thread(this::runUnder);
-                underThread.start();
-                overThread = new Thread(this::runOver);
-                overThread.start();
-            }
+            Simulator.instance.getState().setEstimatedCompletionTime(-1);
+            Simulator.instance.getState().setEstimatedCompletionOverTime(-1);
+            Simulator.instance.getState().setEstimatedCompletionUnderTime(-1);
         }
     }
 
     /**
      * Run the script for the model. Used for every run
+     *
+     * @return
      * @throws IOException
      * @throws InterruptedException
      */
-    private void runScript(String fileName, int procIndex) throws IOException, InterruptedException {
-        System.out.println("RUNNNING: " +  webRef+"/ModelFiles/"+fileName);
-        ProcessBuilder processBuilder = new ProcessBuilder("python3", webRef+"/ModelFiles/"+fileName, webRef, String.valueOf(currentSalt));
-        processBuilder.redirectErrorStream(true);
-        procs[procIndex] = processBuilder.start();
-
-        if (debugMode) {
-            String s;
-            BufferedReader stdOut = new BufferedReader(new
-                    InputStreamReader(procs[procIndex].getInputStream()));
-            while ((s = stdOut.readLine()) != null) {
-                System.out.println(s);
-            }
+    private ArrayList<String> runScript(String modelName, int procIndex, ArrayList<double[][]> currentConfigTuple) throws IOException, InterruptedException {
+        Model model = new Model(webRef, currentConfigTuple.get(0), currentConfigTuple.get(1), modelName + (Simulator.instance.getPort()));
+        model.setup(samples);
+        models[procIndex] = model;
+        if (!isDummy) {
+            return model.call();
+        } else {
+            return model.fakeCall(delayTime, delayBound);
         }
     }
 
@@ -104,26 +124,23 @@ public class ModelCaller {
     public void runOn() {
         try {
             LOGGER.info(String.format("%s; MDSTO; Model starting on the current number of agents (#); %s", Simulator.instance.getState().getTime(), Simulator.instance.getState().getAgents().size()));
-            double startTime = System.nanoTime();
-            runScript("current.py", 1);
-            System.out.println("EXIT runScript");
-            int exitCode = procs[1].waitFor();
-            double result = readResult("currentResults"+currentSalt+".txt");
-            double boundedResult = readTimeBoundedResult("currentResults_boundedT"+currentSalt+".txt");
-            System.out.println("cur " + boundedResult);
-            Simulator.instance.getState().setMissionSuccessChance(result * 100);
-            Simulator.instance.getState().setMissionBoundedSuccessChance(boundedResult * 100);
-            double elapsed = (System.nanoTime() - startTime) / 10E8;
-            LOGGER.info(String.format("%s; MDDNO; Model done on the current number of agents in time (result, elapsed time); %s; %s", Simulator.instance.getState().getTime(), result, elapsed));
-        } catch (IOException e) {
-            System.out.println("RUN - An IO error occurred.");
-        } catch (InterruptedException e) {
-            System.out.println("RUN - Process interrupted.");
-        }
-        //currentThread.interrupt();
-        currentThread = null;
 
-        if (Simulator.instance.getState().getModelStyle().equals("series")) {
+            double startTime = System.nanoTime();
+            ArrayList<String> output = runScript("curr", 1, currentConfig.get(1));
+
+            double boundedResult = readTimeBoundedResultAsTime(output, confidence, currentConfig.get(1));
+            Simulator.instance.getState().setEstimatedCompletionTime(boundedResult);
+            double elapsed = (System.nanoTime() - startTime) / 10E8;
+            LOGGER.info(String.format("%s; MDDNO; Model done on the current number of agents in time (result, elapsed time); %s; %s", Simulator.instance.getState().getTime(), boundedResult, elapsed));
+
+          } catch (IOException e) {
+            System.out.println("RUN - An IO error occurred.");
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            //System.out.println("RUN - Process interrupted.");
+        }
+
+        if (style.equals("series")) {
             overThread = new Thread(this::runOver);
             overThread.start();
         }
@@ -132,50 +149,57 @@ public class ModelCaller {
     /**
      * Run a model for one drone over this number
      */
+
     private void runOver() {
         //addAgentToParameters();
         try {
             LOGGER.info(String.format("%s; MDSTV; Model starting at 1 over the current number of agents;", Simulator.instance.getState().getTime()));
-            runScript("add1drone.py", 2);
-            int exitCode = procs[2].waitFor();
-            double overResult = readResult("add1results"+currentSalt+".txt");
-            double boundedResult = readTimeBoundedResult("add1results_boundedT"+currentSalt+".txt");
-            System.out.println("ov " + boundedResult);
-            Simulator.instance.getState().setMissionSuccessOverChance(overResult * 100);
-            Simulator.instance.getState().setMissionBoundedSuccessOverChance(boundedResult * 100);
-            LOGGER.info(String.format("%s; MDDNV; Model done at 1 over the current number of agents (result); %s", Simulator.instance.getState().getTime(), overResult));
+
+            double startTime = System.nanoTime();
+            ArrayList<String> output = runScript("add1", 2, currentConfig.get(2));
+
+            double boundedResult = readTimeBoundedResultAsTime(output, confidence, currentConfig.get(1));
+
+            Simulator.instance.getState().setEstimatedCompletionOverTime(boundedResult);
+
+            double elapsed = (System.nanoTime() - startTime) / 10E8;
+            LOGGER.info(String.format("%s; MDDNV; Model done at 1 over the current number of agents in time (result, elapsed time); %s; %s", Simulator.instance.getState().getTime(), boundedResult, elapsed));
         } catch (IOException e) {
             System.out.println("RUN OVER - An IO error occurred.");
         } catch (InterruptedException e) {
-            System.out.println("RUN OVER - Process interrupted.");
+            //System.out.println("RUN OVER - Process interrupted.");
         }
         //overThread.interrupt();
         overThread = null;
 
-        if (Simulator.instance.getState().getModelStyle().equals("series")) {
+        if (style.equals("series")) {
             underThread = new Thread(this::runUnder);
             underThread.start();
         }
     }
 
+
+
     /**
      * Run a model for 1 drone under this number
      */
+
     private void runUnder() {
         try {
             LOGGER.info(String.format("%s; MDSTU; Model starting at 1 under the current number of agents;", Simulator.instance.getState().getTime()));
-            runScript("remove1drone.py", 0);
-            int exitCode = procs[0].waitFor();
-            double underResult = readResult("remove1results"+currentSalt+".txt");
-            double boundedResult = readTimeBoundedResult("remove1results_boundedT"+currentSalt+".txt");
-            System.out.println("un " + boundedResult);
-            Simulator.instance.getState().setMissionSuccessUnderChance(underResult * 100);
-            Simulator.instance.getState().setMissionBoundedSuccessUnderChance(boundedResult * 100);
-            LOGGER.info(String.format("%s; MDDNU; Model done at 1 under the current number of agents (result); %s", Simulator.instance.getState().getTime(), underResult));
+
+            double startTime = System.nanoTime();
+            ArrayList<String> output = runScript("rem1", 0, currentConfig.get(0));
+
+            double boundedResult = readTimeBoundedResultAsTime(output, confidence, currentConfig.get(1));
+
+            double elapsed = (System.nanoTime() - startTime) / 10E8;
+            Simulator.instance.getState().setEstimatedCompletionUnderTime(boundedResult);
+            LOGGER.info(String.format("%s; MDDNU; Model done at 1 under the current number of agents in time (result, elapsed time); %s; %s", Simulator.instance.getState().getTime(), boundedResult, elapsed));
         } catch (IOException e) {
             System.out.println("RUN UNDER - An IO error occurred.");
         } catch (InterruptedException e) {
-            System.out.println("RUN UNDER - Process interrupted.");
+            //System.out.println("RUN UNDER - Process interrupted.");
         }
         //underThread.interrupt();
         underThread = null;
@@ -248,6 +272,20 @@ public class ModelCaller {
      */
     private double readResult(String fileName) {
         return -1;
+        /*
+        try {
+            BufferedReader reader = new BufferedReader(
+                    new FileReader(webRef+"/ModelFiles/"+fileName)
+            );
+            double d = Double.parseDouble(reader.readLine());
+            reader.close();
+            return d;
+        } catch (Exception e) {
+            System.out.println("ERROR READING RESULT. RETURNING 0");
+            return 0;
+        }
+
+         */
     }
 
     /**
@@ -281,4 +319,77 @@ public class ModelCaller {
         }
     }
 
+    /**
+     * Read result from file. In future this may take an argument in future
+     * @return
+     */
+    private double readTimeBoundedResultAsTime(ArrayList<String> lines, double confidence, List<double[][]> currentConfigTuple) {
+        //e.g 18000	0.998
+        String s;
+        int timeToComplete = 0;
+        for (String line : lines) {
+            String[] split = line.split("\t");
+            if (Double.parseDouble(split[1]) >= confidence) {
+                timeToComplete = Integer.parseInt(split[0]);
+                break;
+            }
+        }
+        if (timeToComplete == 0) {
+            if (currentConfigTuple.get(1).length < 5) {
+                LOGGER.info(String.format("%s; MDDEF; Model defaulting on small problem (#); %s", Simulator.instance.getState().getTime(), Simulator.instance.getState().getAgents().size()));
+                timeToComplete = 2500;
+            } else {
+                timeToComplete = 30000;
+            }
+        }
+        // PRISM's T counts tenths of a study-era sim second, and study-era sim time ran at
+        // LEGACY_SIM_SECONDS_PER_SECOND x real time. Simulation time is now real seconds.
+        return startTime + (timeToComplete / 10.0) / LEGACY_SIM_SECONDS_PER_SECOND;
+    }
+
+    public void setStyle(String modelStyle) {
+        style = modelStyle;
+    }
+
+    public void setSamples(int samples) {
+        this.samples = samples;
+    }
+
+    public void setDummy(Boolean isDummy) {
+        this.isDummy = isDummy;
+    }
+
+    public void setDelayTime(int delayTime) {
+        this.delayTime = delayTime;
+    }
+
+    public void setDelayBound(int delayBound) {
+        this.delayBound = delayBound;
+    }
+
+    public void setEnabled(Boolean isEnabled) {
+        this.isEnabled = isEnabled;
+    }
+
+    public void setAutorunFrequency(int autoRunFrequency) {
+        this.autoRunFrequency = autoRunFrequency;
+        // Schedule the first autorun one interval after loading, otherwise it waits for a manual add/remove
+        this.nextAutoRun = Simulator.instance.getState().getTime() + autoRunFrequency;
+    }
+
+    public int getAutoRunFrequency() {
+        return autoRunFrequency;
+    }
+
+    public double getNextAutoRun() {
+        return nextAutoRun;
+    }
+
+    public void setNextAutoRun(double nextAutoRun) {
+        this.nextAutoRun = nextAutoRun;
+    }
+
+    public void resetLogger(FileHandler fileHandler) {
+        LOGGER.addHandler(fileHandler);
+    }
 }

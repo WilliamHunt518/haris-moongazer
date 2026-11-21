@@ -1,15 +1,20 @@
 package server.controller;
 
 import server.Simulator;
+import server.model.agents.AgentVirtual;
+import server.model.agents.Hub;
 
 /**
- * This isn't really used at the moment. I have left it in so it can act as a template for a score system later -WH
+ * Score, upkeep and mission cost. Upkeep is charged once per simulated second (PFM missions call handleUpkeep):
+ * 0.1 n^2 + 1.3 for n agents, as in the PFM studies.
  * @author William Hunt
  */
 public class ScoreController extends AbstractController {
     private int completedTasks;
     private int totalTasks;
     private double score;
+    private double mission_cost = 0.00;
+    private double previous_mission_cost = 0.00;
     private int POINTS_PER_TASK = 100;
     private double UPKEEP_PER_SIM_SECOND = 0.25;
 
@@ -22,27 +27,56 @@ public class ScoreController extends AbstractController {
         simulator.getState().addScoreInfo("earned", 0.0);
         simulator.getState().addScoreInfo("progress", 0.0);
         simulator.getState().addScoreInfo("score", 0.0);
+        simulator.getState().addScoreInfo("mission_cost", 0.0);
+        simulator.getState().addScoreInfo("upkeep_add_agent", 0.0);
+        simulator.getState().addScoreInfo("upkeep_rm_agent", 0.0);
     }
 
     public void reset() {
         completedTasks = 0;
         score = 500;
         totalTasks = 0;
+        previous_mission_cost = mission_cost;
+        mission_cost = 0.00;
         simulator.getState().addScoreInfo("upkeep", 0.0);
         simulator.getState().addScoreInfo("earned", 0.0);
         simulator.getState().addScoreInfo("progress", 0.0);
         simulator.getState().addScoreInfo("score", 0.0);
+        simulator.getState().addScoreInfo("mission_cost", 0.0);
+        simulator.getState().addScoreInfo("upkeep_add_agent", 0.0);
+        simulator.getState().addScoreInfo("upkeep_rm_agent", 0.0);
     }
 
     public void handleUpkeep() {
-        double upkeep = simulator.getState().getAgents().size() * UPKEEP_PER_SIM_SECOND;
+        //System.out.println("UPKEEP - " + simulator.getState().getTime());
+        int n = (int) simulator.getState().getAgents().stream().filter(a -> !a.getType().equals("ghost")).count();
+        double upkeep = (0.1 * n * n) + 1.3;
+        //double upkeep = simulator.getState().getAgents().size() * UPKEEP_PER_SIM_SECOND;
         simulator.getState().addScoreInfo("upkeep", upkeep * -1);
+
+        // 20230904_0948h - Ayo Abioye (a.o.abioye@soton.ac.uk) added upkeep prediction to add/remove agent button
+        int temp_n = (n - simulator.getState().getScheduledRemovals()) + 1;
+        double upkeep_add_agent = (0.1 * temp_n * temp_n) + 1.3;
+        simulator.getState().addScoreInfo("upkeep_add_agent", upkeep_add_agent);
+        temp_n = (n - simulator.getState().getScheduledRemovals()) - 1;
+        double upkeep_rm_agent = (0.1 * temp_n * temp_n) + 1.3;
+        simulator.getState().addScoreInfo("upkeep_rm_agent", upkeep_rm_agent);
 
         // TODO also add the time limit?
         //double timeRemaining =
 
         score -= upkeep;
         simulator.getState().addScoreInfo("score", score);
+
+        // 20230815_2107h - Ayo Abioye (a.o.abioye@soton.ac.uk) added mission cost
+        mission_cost += upkeep;
+        // added to if-else loop to fix resetting of mission cost at the end
+        if (previous_mission_cost > mission_cost) {
+            simulator.getState().addScoreInfo("mission_cost", previous_mission_cost);
+            previous_mission_cost = 0.00;
+        } else {
+            simulator.getState().addScoreInfo("mission_cost", mission_cost);
+        }
     }
 
     public void incrementCompletedTask() {
@@ -87,4 +121,23 @@ public class ScoreController extends AbstractController {
         this.totalTasks = totalTasks;
     }
 
+    public int getCompletedTasks() {
+        return completedTasks;
+    }
+
+    public int getTotalTasks() {
+        return totalTasks;
+    }
+
+    public double getScore() {
+        return score;
+    }
+
+    public double getMission_cost() {
+        return mission_cost;
+    }
+
+    public double getPrevious_mission_cost() {
+        return previous_mission_cost;
+    }
 }

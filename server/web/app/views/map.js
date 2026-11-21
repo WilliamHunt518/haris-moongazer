@@ -89,6 +89,15 @@ App.Views.Map = Backbone.View.extend({
                 position: google.maps.ControlPosition.RIGHT_TOP,
             },
             scrollwheel: true,
+            styles: [
+                {
+                    featureType: "all",
+                    elementType: "labels",
+                    stylers: [
+                        { visibility: "off" }
+                    ]
+                }
+            ],
             disableDoubleClickZoom: false,
             disableDefaultUI: true,
 
@@ -994,12 +1003,22 @@ App.Views.Map = Backbone.View.extend({
     },
     updateScorePanel: function () {
         var scoreInfo = this.state.getScoreInfo();
-        var timeRem = $.fromTime((this.state.getTimeLimit() - (this.state.getTime())));
+        var timeRem = $.fromTime((this.state.getTimeLimit() - this.state.getTime()));
         $("#score_timeLeft").html(timeRem);
-        $("#score_progress").html(parseFloat(scoreInfo["progress"]).toFixed(2) + "%");
+        // $("#score_progress").html(parseFloat(scoreInfo["progress"]).toFixed(2) + "%");
+        $("#score_progress").html('<div class="progress-bar" style="width: ' + parseFloat(scoreInfo["progress"]).toFixed(2) + '%; height: 18px; text-align: center; border-radius: 6px; background-color: #01386a; line-height: 18px; color: white; font-size: 0.95rem;">' + parseFloat(scoreInfo["progress"]).toFixed(2) + '%</div>');
         $("#score_upkeep").html(parseFloat(scoreInfo["upkeep"]).toFixed(2));
         $("#score_earned").html(parseFloat(scoreInfo["earned"]).toFixed(2));
         $("#score_score").html(parseFloat(scoreInfo["score"]).toFixed(2));
+
+        // 20230815_2107h - Ayo Abioye (a.o.abioye@soton.ac.uk) added mission cost
+        $("#mission_cost").html("£ " + parseFloat(scoreInfo["mission_cost"]).toFixed(2));
+        var missionCost = parseFloat(scoreInfo["mission_cost"]);
+        $("#mission_cost_background").css("background-color",
+            missionCost > 2000 ? "#7E191B" : (missionCost > 1700 ? "#D79334" : "#228b22"));
+        let marker_tooltip = scoreInfo["mission_cost"] * 100 / 2000;
+        let marker_margin = marker_tooltip * 0.57;
+        $("#mission_cost_progress_marker").html('<div class="tooltip" style="margin-left: ' + marker_margin + '%;"><span class="tooltiptext">' + parseInt(marker_tooltip) + '%</span></div>');
 
     },
     getIcon: function (num) {

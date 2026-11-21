@@ -1152,10 +1152,18 @@ public class Allocator {
      * @return
      */
     public boolean dynamicAssignNearest(Agent agent) {
+        return dynamicAssignNearest(agent, false);
+    }
+
+    /**
+     * As {@link #dynamicAssignNearest(Agent)}; with overlap, tasks already being done are also considered
+     * (used by PFM missions to back up an existing task).
+     */
+    public boolean dynamicAssignNearest(Agent agent, boolean overlap) {
         double nearestDist = 99999999;
         Task nearestTask = null;
         for (Task t : simulator.getState().getTasks()) {
-            if (t.getAgents().isEmpty()) {
+            if (overlap || t.getAgents().isEmpty()) {
                 double thisDist = t.getCoordinate().getDistance(agent.getCoordinate());
                 if (thisDist < nearestDist) {
                     nearestTask = t;
@@ -1195,15 +1203,19 @@ public class Allocator {
      * @param agent
      */
     public void dynamicAssign(Agent agent) {
+        dynamicAssign(agent, false);
+    }
+
+    public void dynamicAssign(Agent agent, boolean overlap) {
         List<AgentVirtual> homingAgents = new ArrayList<>();
         simulator.getState().getAgents().forEach(a -> {
-            if (a instanceof AgentVirtual av && ((av.isGoingHome() || av.isStopped()) || agent.equals(av)) && !(a instanceof Hub)) {
+            if (a instanceof AgentVirtual av && ((av.isGoingHome() || av.isStopped()) || (agent != null && agent.equals(av))) && !(a instanceof Hub)) {
                 homingAgents.add(av);
             }
         });
 
         if (simulator.getState().getAllocationMethod().equals("bestfirst")) {
-            dynamicAssignNearest(agent);
+            dynamicAssignNearest(agent, overlap);
         } else if (simulator.getState().getAllocationMethod().equals("maxsum")) {
             List<Agent> readyAgents = new ArrayList<>();
             for (Agent a : simulator.getState().getAgents()) {
@@ -1221,15 +1233,17 @@ public class Allocator {
             availableTasks.removeIf(t -> !t.getAgents().isEmpty());
 
             Map<String, String> alloc = compute(readyAgents, availableTasks, false);
-            alloc.forEach(this::putInTempAllocation);
-            confirmAllocation(simulator.getState().getTempAllocation());
+            if (alloc != null) {
+                alloc.forEach(this::putInTempAllocation);
+                confirmAllocation(simulator.getState().getTempAllocation());
 
-            readyAgents.forEach(a -> {
-                if (!alloc.containsKey(a.getId()) && a.getTask() == null) {
-                    dynamicAssignNearest(a);
-                    homingAgents.add((AgentVirtual) a);
-                }
-            });
+                readyAgents.forEach(a -> {
+                    if (!alloc.containsKey(a.getId()) && a.getTask() == null) {
+                        dynamicAssignNearest(a);
+                        homingAgents.add((AgentVirtual) a);
+                    }
+                });
+            }
         } else {
             dynamicAssignRandom(agent);
         }

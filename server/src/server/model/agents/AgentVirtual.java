@@ -37,6 +37,13 @@ public class AgentVirtual extends Agent {
     public void step(Boolean flockingEnabled) {
         //System.out.println(getId() + " (stp=" + isStopped() + ") -> route = " + getRoute());
         if (goingHome) {
+            // From dev_verification (PFM missions): an agent sent home with an empty route heads for the hub
+            if (Simulator.instance.getState().isPfmMission()) {
+                if (route.isEmpty()) {
+                    setRoute(Collections.singletonList(Simulator.instance.getState().getHubLocation()));
+                }
+                resume();
+            }
             moveTowardsDestination();
             for (Agent a : sensor.senseNeighbours(this, 10.0)) {
                 if (a instanceof Hub) {
@@ -50,7 +57,7 @@ public class AgentVirtual extends Agent {
 
                 }
             }
-            this.battery = this.battery > 0 ? this.battery - (unitTimeBatteryConsumption + batteryVariance + Simulator.instance.getState().calculateRandomValueFor("batteryPerStep")) : 0;
+            this.battery = this.battery > 0 ? this.battery - (baseBatteryPerTick() + (batteryVariance + Simulator.instance.getState().calculateRandomValueFor("batteryPerStep")) * perTickScale()) : 0;
         } else if (getTask() instanceof DeepScanTask) {
             //if (route.size() > 0) {
                 if (isFinalDestinationReached()) {
@@ -69,7 +76,7 @@ public class AgentVirtual extends Agent {
 
         } else if (alive) {
             super.step(flockingEnabled);
-            this.battery = this.battery > 0 ? this.battery - (unitTimeBatteryConsumption + batteryVariance + Simulator.instance.getState().calculateRandomValueFor("batteryPerStep")) : 0;
+            this.battery = this.battery > 0 ? this.battery - (baseBatteryPerTick() + (batteryVariance + Simulator.instance.getState().calculateRandomValueFor("batteryPerStep")) * perTickScale()) : 0;
         }
 
         //Simulate things that would be done by a real drone
@@ -350,7 +357,7 @@ public class AgentVirtual extends Agent {
      */
     public void charge() {
         charging = true;
-        battery += unitTimeBatteryConsumption * 10;
+        battery += baseBatteryPerTick() * 10;
         if (battery >= 1) {
             battery = 1;
             alive = true;

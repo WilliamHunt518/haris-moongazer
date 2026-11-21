@@ -49,6 +49,10 @@ public class AgentHandler extends RestHandler {
     private void handleHubSpawn(Request req, Response resp) throws IOException {
         Agent a = simulator.getAgentController().spawnAgent();
         if (a != null) {
+            if (simulator.getState().isPfmMission()) {
+                // A re-added agent carries the last removed agent's battery, recharged at the hub since
+                a.setBattery(simulator.pfmBatteryForReaddedAgent());
+            }
             // Update model and start thread
             simulator.updateMissionModel();
             a.stop();
@@ -56,6 +60,7 @@ public class AgentHandler extends RestHandler {
         } else {
             resp.send(400, "Unable to place agent. The hub area may be too full");
         }
+        simulator.getState().updateTempAddRemTicker();
     }
 
     private void handleHubDespawn(Request req, Response resp) throws IOException {
@@ -64,7 +69,11 @@ public class AgentHandler extends RestHandler {
             resp.send(400, "Can't remove, unspecified error");
         } else {
             resp.send(201, "Scheduled a removal, " + res + " agents will be removed");
+            if (simulator.getState().isPfmMission()) {
+                simulator.updateMissionModel(res);
+            }
         }
+        simulator.getState().updateTempAddRemTicker();
     }
 
     @Override

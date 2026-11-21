@@ -252,7 +252,10 @@ public class AgentController extends AbstractController {
      * @return
      */
     public Agent spawnAgent() {
-        if (scheduledRemovals > 0) {
+        if (simulator.getState().isPfmMission() && simulator.getState().getScheduledRemovals() > 0) {
+            // Adding while a removal is pending cancels the removal (PFM missions)
+            simulator.getState().decrementRemovals();
+        } else if (!simulator.getState().isPfmMission() && scheduledRemovals > 0) {
             scheduledRemovals--;
         } else {
             if (Simulator.instance.getState().getAgents().size() < 11) {
@@ -294,9 +297,11 @@ public class AgentController extends AbstractController {
                         //agent.stop();
                     }
                 }
+                LOGGER.info(String.format("%s; SPWN; Hub spawed an agent - now there are (numAgents); %s ", simulator.getState().getTime(), simulator.getState().getAgents().size() - 1));
                 return agent;
             }
         }
+        LOGGER.info(String.format("%s; SPWNF; Hub FAILED to spawn an agent - there are still (numAgents); %s ", simulator.getState().getTime(), simulator.getState().getAgents().size() - 1));
         return null;
     }
 
@@ -308,6 +313,13 @@ public class AgentController extends AbstractController {
         Hub hub = Simulator.instance.getState().getHub();
         if (hub instanceof AgentHubProgrammed ahp) {
             return ahp.scheduleRemoval(1);
+        } else if (hub instanceof AgentHub ah && simulator.getState().isPfmMission()) {
+            // PFM missions track removals in State (keeps at least 4 agents)
+            if (simulator.getState().getAgents().size() - simulator.getState().getScheduledRemovals() > 4) {
+                LOGGER.info(String.format("%s; REMA; Scheduled a removal of an agent", simulator.getState().getTime()));
+                simulator.getAgentController().decrementAgentNumbers();
+                return simulator.getState().incrementRemovals();
+            }
         } else if (hub instanceof AgentHub ah) {
             if (Simulator.instance.getState().getAgents().size() - ah.getScheduledRemovals() > 4) {
                 simulator.getAgentController().decrementAgentNumbers();
@@ -315,6 +327,7 @@ public class AgentController extends AbstractController {
                 //return ah.scheduleRemoval(1);
             }
         }
+        LOGGER.info(String.format("%s; REMAF; Failed to schedule removal of an agent - there are still (numAgents); %s ", simulator.getState().getTime(), simulator.getState().getAgents().size() - 1));
         return -1;
     }
 

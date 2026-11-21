@@ -22,6 +22,22 @@ public abstract class Agent extends MObject implements Serializable {
     protected double unitTurningAngle = 0.1d; //Radians
     //static final float unitTimeBatteryConsumption = 0.00025F;
     static final float unitTimeBatteryConsumption = 0.000025F;
+    // Study-era engine (dev_verification, used by the PFM studies): 5 m per sim-second at 5x time, and
+    // 0.00025 battery per tick at 25 ticks/s. See State.isLegacyStudyPhysics().
+    static final double LEGACY_SPEED = 5.0;
+    static final double LEGACY_BATTERY_PER_TICK = 0.00025;
+    static final double LEGACY_TICKS_PER_TICK = 5.0;  // 25 study-era ticks per second / 5 ticks per second now
+
+    /** Base battery drain per tick, matching the study-era drain per real second when legacy physics is on. */
+    protected static double baseBatteryPerTick() {
+        return Simulator.instance.getState().isLegacyStudyPhysics()
+                ? LEGACY_BATTERY_PER_TICK * LEGACY_TICKS_PER_TICK : unitTimeBatteryConsumption;
+    }
+
+    /** Multiplier for per-tick battery variance and noise, so legacy scenarios keep their per-second values. */
+    protected static double perTickScale() {
+        return Simulator.instance.getState().isLegacyStudyPhysics() ? LEGACY_TICKS_PER_TICK : 1.0;
+    }
     private static final double EPS = 1e-5;
 
     //Used in client
@@ -59,7 +75,7 @@ public abstract class Agent extends MObject implements Serializable {
         // Sensible range 5-20m/s e.g.:
         // DJI Phantom 4 Pro V2.0 S-Mode = 20.1168 m/s
         // DJI Mavic 3 C-Mode = 5 m/s
-        speed = 12.0;
+        speed = Simulator.instance.getState().isLegacyStudyPhysics() ? LEGACY_SPEED : 12.0;
         unitTurningAngle = (0.5d * Simulator.instance.getStepScale());
         heading = 0.0;
         battery = 1.0;
