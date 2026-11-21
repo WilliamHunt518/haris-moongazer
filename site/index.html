@@ -147,6 +147,8 @@ footer{border-top:1px solid var(--line);padding-block:28px 40px;color:var(--mute
 footer .wrap{display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between}
 .draft{font:500 12px var(--mono);color:var(--signal)}
 @media (prefers-reduced-motion:reduce){.stage img{transition:none}}
+.fbrand{display:inline-flex;align-items:center;gap:12px}
+.fbrand img{flex:none}
 </style>
 
 <header class="top">
@@ -530,7 +532,7 @@ docker compose up
 
 <footer>
   <div class="wrap">
-    <span>HARIS · Human And Robot Interactive Swarm simulator</span>
+    <span class="fbrand"><img src="img/hare-wordmark.svg" width="64" height="64" alt="HARIS Moongazer logo: a hare gazing at the stars, its legs forming the H of HARIS">HARIS · Human And Robot Interactive Swarm simulator</span>
     <span class="draft">Draft preview · links and licence to be confirmed</span>
   </div>
 </footer>
