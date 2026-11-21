@@ -166,3 +166,4 @@ server/web/verification/*
 !server/web/verification/template_*.txt
 !server/web/verification/property.pctl
 server/drones.txt
+_site/

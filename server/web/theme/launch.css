@@ -38,6 +38,8 @@ html, body {
 .mg-intro { padding: 36px 0 20px; max-width: 720px; }
 .mg-intro h1 { margin: 0 0 6px; font-size: 28px; font-weight: 650; color: var(--mg-navy); letter-spacing: -.01em; }
 .mg-intro p { margin: 0; color: var(--mg-muted); font-size: 16px; }
+.mg-intro .mg-demo-note { margin-top: 12px; padding: 10px 14px; border-radius: var(--mg-radius-sm); background: var(--mg-blue-50); color: var(--mg-navy); font-size: 14.5px; }
+.mg-demo-note a { color: var(--mg-blue); font-weight: 600; }
 
 /* In-progress banner */
 .mg-banner {

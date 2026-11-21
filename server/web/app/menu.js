@@ -1,8 +1,13 @@
 /**
  * HARIS Moongazer launch page: showcase tiles (from showcase/showcase.json), sandbox, and a searchable list of all
  * scenario files.
+ *
+ * Online demo (window.MG_DEMO, set by the GitHub Pages build): there is no server, so Launch opens a recorded run
+ * (replays/index.json maps scenario files to recordings) and the parts that need a live server are hidden.
  */
 function menuInit() {
+    var demo = !!window.MG_DEMO;
+    var recordings = {};  // scenario file -> replay id
     var showError = function (msg) {
         var el = $("#loadScenarioErrorText");
         el.text(msg).fadeIn(200);
@@ -13,6 +18,11 @@ function menuInit() {
     // otherwise the later scenario silently replaces the first on the server.
     var launching = false;
     var launchScenario = function (fileName, button) {
+        if (demo) {
+            if (recordings[fileName]) window.location = "sandbox.html?replay=" + encodeURIComponent(recordings[fileName]);
+            else showError("That one isn't in the online demo. Run HARIS Moongazer yourself to try it.");
+            return;
+        }
         if (launching) return;
         launching = true;
         if (button) button.prop("disabled", true).text("Loading…");
@@ -21,7 +31,7 @@ function menuInit() {
         $.post('/reset').always(function () {
             setLookTiming().always(function () {
                 $.post('/mode/scenario', {'file-name': fileName}, function () {
-                    window.location = "/sandbox.html";
+                    window.location = "sandbox.html";
                 }).fail(function () {
                     launching = false;
                     if (button) button.prop("disabled", false).text("Launch");
@@ -86,6 +96,7 @@ function menuInit() {
 
         var selected = t.file;
         var button = tile.find(".mg-tile-foot .mg-btn");
+        if (demo) button.text("Watch");
         tile.find(".mg-chip").on("click", function () {
             selected = $(this).data("file");
             tile.find(".mg-chip").attr("aria-pressed", "false");
@@ -100,6 +111,7 @@ function menuInit() {
     $.getJSON("showcase/showcase.json", function (data) {
         var sandbox = $("#sandboxTile");
         (data.tiles || []).forEach(function (t) { sandbox.before(renderTile(t)); });
+        $(document).trigger("mg:tiles");
     }).fail(function () {
         showError("Unable to load the showcase list.");
     });
@@ -111,14 +123,14 @@ function menuInit() {
         launching = true;
         setLookTiming().always(function () {
             $.post('/mode/sandbox', function () {
-                window.location = "/sandbox.html";
+                window.location = "sandbox.html";
             }).fail(function () { launching = false; showError("Unable to open the sandbox."); });
         });
     });
 
     // ------ In-progress banner ------
     $("#buttonResumeOperation").on('click', function () {
-        window.location = "/sandbox.html";
+        window.location = "sandbox.html";
     });
     $("#buttonAbortOperation").on('click', function () {
         $.post('/reset', function () {
@@ -156,6 +168,24 @@ function menuInit() {
     startButton.on('click', function () {
         if (selectedFile) launchScenario(selectedFile, startButton);
     });
+
+    if (demo) {
+        $("#sandboxTile, .mg-more, #inProgressBanner").prop("hidden", true);
+        $("#demoNote").prop("hidden", false);
+        // Only offer variants that have a recording
+        var hideUnrecorded = function () {
+            if (!recordingsLoaded) return;
+            $(".mg-chip").each(function () { $(this).prop("hidden", !recordings[$(this).data("file")]); });
+        };
+        var recordingsLoaded = false;
+        $.getJSON("replays/index.json", function (data) {
+            (data.replays || []).forEach(function (r) { recordings[r.file] = r.id; });
+            recordingsLoaded = true;
+            hideUnrecorded();
+        });
+        $(document).on("mg:tiles", hideUnrecorded);
+        return;
+    }
 
     $.get("/mode/scenario-list", {}, function (data) {
         var items = [];

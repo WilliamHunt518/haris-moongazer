@@ -201,3 +201,18 @@ div.ui-layout-resizer:hover { background: var(--mg-line) !important; }
 .mg-timing-row span { color: var(--mg-muted); font-weight: 600; }
 .mg-timing-row input[type="range"] { width: 100%; margin: 0; accent-color: var(--mg-blue); }
 .mg-timing-row output { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; color: var(--mg-navy); }
+
+/* Replay mode (recorded runs, e.g. the online demo) */
+.mg-replay-label { font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--mg-orange); }
+.mg-replay-row { display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 8px; font-size: 12.5px; }
+.mg-replay-play {
+    width: 28px; height: 24px; border-radius: 6px; border: 1px solid var(--mg-line-strong); background: var(--mg-surface);
+    color: var(--mg-navy); cursor: pointer; font-size: 11px; line-height: 1;
+}
+.mg-replay-scrub { width: 100%; margin: 0; accent-color: var(--mg-orange); }
+.mg-replay-time { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--mg-navy); }
+.mg-replay-end button, .mg-replay-end a {
+    font: inherit; font-size: 14px; font-weight: 600; padding: 8px 14px; border-radius: var(--mg-radius-sm); cursor: pointer; text-decoration: none;
+}
+.mg-replay-end button { background: var(--mg-orange); color: #fff; border: 1px solid var(--mg-orange); }
+.mg-replay-end a { background: var(--mg-surface); color: var(--mg-navy); border: 1px solid var(--mg-line-strong); }
