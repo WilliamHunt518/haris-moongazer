@@ -2,6 +2,7 @@ package server.controller;
 
 import server.Simulator;
 import server.controller.handler.*;
+import tool.MapsKey;
 import tool.HttpServer;
 import tool.HttpServer.*;
 
@@ -53,6 +54,13 @@ public class ConnectionController extends AbstractController {
                     if (handleEndpoint(req, resp))
                         return 200;
 
+                    //HTML pages get the Maps key substituted at serve time (see tool.MapsKey)
+                    File page = new File(dir, req.getPath()).getCanonicalFile();
+                    if (page.getPath().startsWith(dir.getCanonicalPath()) && MapsKey.isHtml(page)) {
+                        MapsKey.serveHtml(page, resp);
+                        return 0;
+                    }
+
                     //If not endpoint then handle as file request.
                     return fileHandler.serve(req, resp);
                 }
@@ -99,6 +107,13 @@ public class ConnectionController extends AbstractController {
                     //Attempt to handle as endpoint
                     if (handleEndpoint(req, resp))
                         return 200;
+
+                    //HTML pages get the Maps key substituted at serve time (see tool.MapsKey)
+                    File page = new File(dir, req.getPath()).getCanonicalFile();
+                    if (page.getPath().startsWith(dir.getCanonicalPath()) && MapsKey.isHtml(page)) {
+                        MapsKey.serveHtml(page, resp);
+                        return 0;
+                    }
 
                     //If not endpoint then handle as file request.
                     return fileHandler.serve(req, resp);

@@ -1,4 +1,33 @@
-# Hut - Documentation
+# HARIS Moongazer
+
+**HARIS** (Human And Robot Interactive Swarm simulator) is a browser-based platform for human–swarm interaction research: one operator supervises and tasks a simulated swarm of UAVs and ground vehicles over Google Maps, and every interface feature is configured per experiment in a JSON scenario file.
+
+*Moongazer* is the consolidation effort: one maintained branch (`moongazer`) with a one-command build. It is work in progress in this fork; the original branches are kept unchanged.
+
+## Quick start
+
+You need Java 21 and a Google Maps JavaScript API key (restrict it by HTTP referrer, e.g. `http://localhost:44101/*`).
+
+```bash
+cd server
+export HARIS_MAPS_KEY=<your-key>      # Windows PowerShell: $env:HARIS_MAPS_KEY="<your-key>"
+./gradlew run                         # Windows: gradlew.bat run
+```
+
+Then open <http://localhost:44101> and choose **Load Scenario** or **Sandbox**. Scenarios live in `server/web/scenarios/`.
+
+- **Another port:** `./gradlew run --args=8000`
+- **Docker:** `cd server && HARIS_MAPS_KEY=<your-key> docker compose up --build`
+- **Key in a file instead:** copy `server/config.example.properties` to `server/config.properties` (git-ignored) and set `maps.key`.
+- **Logs:** one file per participant session in `server/log/`.
+
+Never commit a Maps key. Pages refer to it as `%HARIS_MAPS_KEY%`, and the server fills it in when it serves them. CI fails if a key appears in a tracked file.
+
+---
+
+## Original documentation (HutSim / DJI Hut, partly out of date)
+
+### Hut - Documentation
 ### University of Southampton
 ------
 This repository is split into two parts:

@@ -1,5 +1,4 @@
 package server.model.agents;
-import com.mysql.jdbc.log.Log;
 import server.Simulator;
 import server.model.Coordinate;
 import server.model.target.AdjustableTarget;

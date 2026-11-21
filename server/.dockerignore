@@ -1,0 +1,7 @@
+.gradle
+build
+log
+libs
+hut.jar
+config.properties
+.env

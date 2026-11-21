@@ -152,3 +152,11 @@ server/web/ModelFiles/*.txt
 server/*.log
 
 server/web/PrismModel/*.pm
+
+# Local secrets (Google Maps key etc.) - see server/config.example.properties
+config.properties
+.env
+
+# Gradle
+server/.gradle/
+server/build/

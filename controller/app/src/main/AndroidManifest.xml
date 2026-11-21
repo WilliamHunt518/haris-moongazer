@@ -47,7 +47,7 @@
             android:value="310625bb89902f506fc84065" />
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyC94z_-X2o-lDC6HwJI87PqhTuP2B-Oqco" />
+            android:value="${MAPS_API_KEY}" />
 
         <!-- DJI SDK -->
         <activity
