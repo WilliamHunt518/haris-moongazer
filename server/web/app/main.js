@@ -126,7 +126,8 @@ var simulator = {
         });
         // 20230815_2107h - (Ayo Abioye) a.o.abioye@soton.ac.uk added mission cost
         $("#mission_cost_canvas").accordion({
-            collapsible: true
+            collapsible: true,
+            heightStyle: "content"
         });
 
         $("#accordion_score").accordion({

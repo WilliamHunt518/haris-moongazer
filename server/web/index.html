@@ -1,42 +1,91 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta name="author" content="Joe Early">
-        <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
-        <meta name="viewport"
-              content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no, width=device-width"/>
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>HARIS Moongazer</title>
 
-        <title>MultiUAV - Home</title>
+    <link rel="stylesheet" href="theme/tokens.css"/>
+    <link rel="stylesheet" href="theme/launch.css"/>
 
-        <script type="text/javascript" src="lib/lab/LAB-2.0.3.min.js"></script>
-        <script type="text/javascript" src="loadMenu.js"></script>
+    <script type="text/javascript" src="lib/lab/LAB-2.0.3.min.js"></script>
+    <script type="text/javascript" src="loadMenu.js"></script>
+</head>
+<body>
+<header class="mg-topbar">
+    <div class="mg-wrap mg-topbar-inner">
+        <a class="mg-brand" href="/" aria-label="HARIS Moongazer home">
+            <svg class="mg-mark" viewBox="0 0 32 32" aria-hidden="true">
+                <circle cx="16" cy="16" r="15" fill="#0d2a40"/>
+                <path d="M20.5 6.5a10 10 0 1 0 5 13.2A8 8 0 1 1 20.5 6.5z" fill="#ffaf46"/>
+            </svg>
+            <span class="mg-brand-text"><strong>HARIS</strong> Moongazer</span>
+        </a>
+        <span class="mg-topbar-sub">Human And Robot Interactive Swarm simulator</span>
+    </div>
+</header>
 
-        <link rel="stylesheet" href="homePageStyles.css"/>
-    </head>
-    <body>
-        <div id="mainButtonGroup">
-            <button class="mainButton topButton" disabled style="height: 33%;">Create Scenario</button>
-            <input id="buttonLoadScenario" class="mainButton middleButton" type="button" value="Load Scenario" style="height: 33%;">
-            <input id="buttonSandboxMode" class="mainButton bottomButton" type="button" value="Sandbox Mode" style="height: 33%;">
+<main class="mg-wrap">
+    <section id="inProgressBanner" class="mg-banner" hidden>
+        <div>
+            <strong>A mission is already running.</strong>
+            <span id="inProgressName"></span>
         </div>
+        <div class="mg-banner-actions">
+            <button id="buttonResumeOperation" class="mg-btn mg-btn-primary" type="button">Resume</button>
+            <button id="buttonAbortOperation" class="mg-btn mg-btn-ghost" type="button">End it</button>
+        </div>
+    </section>
 
-        <div id="loadScenarioDiv">
-            <input id="scenarioSearch" type="text" value="Search">
-            <div id="scenarioListDiv">
-                <ul id="scenarioList"></ul>
+    <section class="mg-intro">
+        <h1>Choose a scenario</h1>
+        <p>Each scenario shows a HARIS feature from published human–swarm interaction research. Pick one to launch it, or open the sandbox to build your own mission.</p>
+    </section>
+
+    <section id="tiles" class="mg-grid" aria-label="Showcase scenarios">
+        <article class="mg-tile" id="sandboxTile">
+            <div class="mg-tile-media" id="sandboxMedia">
+                <img src="showcase/img/alloc.webp" alt="" loading="lazy">
             </div>
-            <div id="loadScenarioButtonDiv">
-                <input id="buttonStartScenario" class="mainButton topButton" type="button" value="Load" style="height: 50%;" disabled>
-                <input id="buttonCancelLoadScenario" class="mainButton bottomButton" type="button" value="Cancel" style="height: 50%;">
+            <div class="mg-tile-body">
+                <p class="mg-eyebrow">Free play</p>
+                <h2>Sandbox</h2>
+                <p class="mg-showcasing">Build your own mission</p>
+                <p class="mg-desc">Start from an empty map. Place drones and tasks, then allocate them by hand or let the allocator do it.</p>
             </div>
-        </div>
+            <div class="mg-tile-foot">
+                <span class="mg-file">No scenario file</span>
+                <button id="buttonSandboxMode" class="mg-btn mg-btn-primary" type="button">Open sandbox</button>
+            </div>
+        </article>
+    </section>
 
-        <div id="inProgressDiv">
-            <p style="text-align: center;">An operation is already in progress.</p>
-            <input id="buttonResumeOperation" class="mainButton topButton" type="button" value="Resume Operation" style="height: 33%;">
-            <input id="buttonAbortOperation"  class="mainButton bottomButton" type="button" value="Abort Operation" style="height: 33%;">
-        </div>
+    <section class="mg-more">
+        <p>Looking for a study condition or a test mission? Every file in <code>web/scenarios</code> is listed here.</p>
+        <button id="buttonLoadScenario" class="mg-btn mg-btn-secondary" type="button">Browse all scenarios</button>
+    </section>
+</main>
 
-        <p id="loadScenarioErrorText"></p>
-    </body>
+<footer class="mg-footer">
+    <div class="mg-wrap">
+        HARIS Moongazer · a human–swarm interaction research platform · University of Southampton
+    </div>
+</footer>
+
+<div id="loadScenarioDiv" class="mg-modal" hidden>
+    <div class="mg-modal-card" role="dialog" aria-modal="true" aria-labelledby="allTitle">
+        <div class="mg-modal-head">
+            <h2 id="allTitle">All scenarios</h2>
+            <button id="buttonCancelLoadScenario" class="mg-icon-btn" type="button" aria-label="Close">×</button>
+        </div>
+        <input id="scenarioSearch" class="mg-input" type="search" placeholder="Search scenarios" autocomplete="off">
+        <ul id="scenarioList" class="mg-list"></ul>
+        <div class="mg-modal-foot">
+            <button id="buttonStartScenario" class="mg-btn mg-btn-primary" type="button" disabled>Launch</button>
+        </div>
+    </div>
+</div>
+
+<p id="loadScenarioErrorText" class="mg-toast" role="status"></p>
+</body>
 </html>

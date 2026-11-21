@@ -14,7 +14,9 @@ export HARIS_MAPS_KEY=<your-key>      # Windows PowerShell: $env:HARIS_MAPS_KEY=
 ./gradlew run                         # Windows: gradlew.bat run
 ```
 
-Then open <http://localhost:44101> and choose **Load Scenario** or **Sandbox**. Scenarios live in `server/web/scenarios/`.
+Then open <http://localhost:44101>. The launch page shows a tile for each showcased feature, plus the sandbox and a list of every scenario. Scenarios live in `server/web/scenarios/`.
+
+- **Add or change a showcase tile:** edit `server/web/showcase/showcase.json` (title, description, papers, scenario file and optional variants) and put a 16:10 image in `server/web/showcase/img/`.
 
 - **Another port:** `./gradlew run --args=8000`
 - **Docker:** `cd server && HARIS_MAPS_KEY=<your-key> docker compose up --build`
