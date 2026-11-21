@@ -102,11 +102,11 @@ The MultiUAV controller uses map overlays to display extra information to the us
 A potential extension to the project is to use an existing piece of visualization software to display the state of the agents to assist the user. There is already a REST API endpoint in place that provides all the necessary information for this plugin, just the plugin itself has not been implemented.
 
 [1]: https://bitbucket.org/dhaminda/hutserver/downloads/MultiUAVControllerVideo.zip
-[2]: ../web/scenarios
+[2]: ../../server/web/scenarios
 [3]: ./scenario_files.md
 
-[start_menu]: https://bitbucket.org/dhaminda/hutserver/raw/master/docs/img/start_menu.png "Start Menu"
-[edit_task_interface_1]: https://bitbucket.org/dhaminda/hutserver/raw/master/docs/img/edit_task_interface_1.png "Edit Task Interface 1"
-[region_path]: https://bitbucket.org/dhaminda/hutserver/raw/master/docs/img/region_path.png "Region Path"
-[edit_path]: https://bitbucket.org/dhaminda/hutserver/raw/master/docs/img/edit_path.png "Edit Path"
-[overlay_menu]: https://bitbucket.org/dhaminda/hutserver/raw/master/docs/img/overlay_menu.png "Overlay Menu"
+[start_menu]: img/start_menu.png "Start Menu"
+[edit_task_interface_1]: img/edit_task_interface_1.png "Edit Task Interface 1"
+[region_path]: img/region_path.png "Region Path"
+[edit_path]: img/edit_path.png "Edit Path"
+[overlay_menu]: img/overlay_menu.png "Overlay Menu"

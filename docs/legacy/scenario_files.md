@@ -130,4 +130,4 @@ Scenarios can be loaded from a JSON file. The application looks for scenario fil
   ]
 }
 ```
-[1]: ../web/scenarios
+[1]: ../../server/web/scenarios

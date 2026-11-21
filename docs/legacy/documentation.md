@@ -64,41 +64,41 @@ An overview of the allocation process is given below:
 ![Server Architecture][allocation_process]
 
 [1]: https://bitbucket.org/jearly97/hut_dji_controller
-[2]: ../src
-[3]: ../web
-[4]: ../src/maxsum
-[5]: ../src/server
-[6]: ../src/tool
+[2]: ../../server/src
+[3]: ../../server/web
+[4]: ../../server/src/maxsum
+[5]: ../../server/src/server
+[6]: ../../server/src/tool
 [7]: https://en.wikipedia.org/wiki/Gson
 [8]: https://www.freeutils.net/source/jlhttp/
 [9]: http://www.rabbitmq.com/
 [10]: http://www.rabbitmq.com/install-windows.html
 [11]: https://www.southampton.ac.uk/ageing/postgraduate/welcome/vpn.page
-[12]: ../src/server/QueueManager.java
+[12]: ../../server/src/server/QueueManager.java
 [13]: https://bitbucket.org/jearly97/hut_dji_controller/src/master/docs/documentation.md#markdown-header-setup-guide
-[14]: ../src/server/Simulator.java
-[15]: ../src/server/controller/ConnectionController.java
-[16]: ../src/server/QueueManager.java
-[17]: ../src/server/controller/AgentController.java
-[18]: ../src/server/controller/TargetController.java
-[19]: ../src/server/controller/TaskController.java
-[21]: ../src/server/model/State.java
-[22]: ../src/server/model/Agent.java
-[23]: ../src/server/model/Schedule.java
-[24]: ../src/server/model/Target.java
-[25]: ../src/server/model/Task.java
-[26]: ../src/server/Allocator.java
-[27]: ../src/maxsum
+[14]: ../../server/src/server/Simulator.java
+[15]: ../../server/src/server/controller/ConnectionController.java
+[16]: ../../server/src/server/QueueManager.java
+[17]: ../../server/src/server/controller/AgentController.java
+[18]: ../../server/src/server/controller/TargetController.java
+[19]: ../../server/src/server/controller/TaskController.java
+[21]: ../../server/src/server/model/State.java
+[22]: ../../server/src/server/model/agents/Agent.java
+[23]: ../../server/src/server/model/Schedule.java
+[24]: ../../server/src/server/model/target/Target.java
+[25]: ../../server/src/server/model/task/Task.java
+[26]: ../../server/src/server/Allocator.java
+[27]: ../../server/src/maxsum
 [28]: ./endpoints.md
-[29]: ../src/server/controller/handler/AgentHandler.java
-[30]: ../src/server/controller/handler/TaskHandler.java
-[31]: ../src/server/controller/handler/TargetHandler.java
-[32]: ../src/server/controller/handler/RootHandler.java
+[29]: ../../server/src/server/controller/handler/AgentHandler.java
+[30]: ../../server/src/server/controller/handler/TaskHandler.java
+[31]: ../../server/src/server/controller/handler/TargetHandler.java
+[32]: ../../server/src/server/controller/handler/RootHandler.java
 [33]: https://www.cloudamqp.com/
 [34]: ./file_tree.md
 
 [project_architecture]: https://bitbucket.org/jearly97/hut_dji_controller/raw/master/docs/project_architecture.png "Project Architecture Overview"
-[server_architecture]: https://bitbucket.org/dhaminda/hutserver/raw/master/docs/img/server_architecture.png "Server Architecture"
-[allocation_process]: https://bitbucket.org/dhaminda/hutserver/raw/master/docs/img/allocation_flow.png "Allocation Process"
+[server_architecture]: img/server_architecture.png "Server Architecture"
+[allocation_process]: img/allocation_flow.png "Allocation Process"
 
 
