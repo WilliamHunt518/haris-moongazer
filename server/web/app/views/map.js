@@ -243,8 +243,11 @@ App.Views.Map = Backbone.View.extend({
             self.connected = false;
         });
 
-        // Create a connection to the rosbridge WebSocket server.
-        ros.connect('ws://haymarket.ecs.soton.ac.uk:9090');
+        // Connect to a rosbridge WebSocket server only when one is given, e.g. sandbox.html?rosbridge=ws://host:9090
+        // (the study-era real-drone link at ws://haymarket.ecs.soton.ac.uk:9090 is no longer reachable)
+        var rosbridgeUrl = new URLSearchParams(window.location.search).get("rosbridge");
+        if (rosbridgeUrl)
+            ros.connect(rosbridgeUrl);
 
         this.state.agents.forEach(function (agent) {
             if (agent.attributes.route[0] != null) agentRoutes[agent.id] = agent.attributes.route[0];

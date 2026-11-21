@@ -570,4 +570,3 @@ App.Devices.PFDView.Tape.prototype.drawFunc = function(context) {
 	}
 };
 
-App.Views.PFD = App.Views.PFDView;

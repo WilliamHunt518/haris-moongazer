@@ -661,6 +661,8 @@ public class Simulator {
             Object verificationJson = GsonUtils.getValue(obj, "verificationParameters");
             if (verificationJson != null) {
                 state.setPfmMission(true);
+                // The PFM study ran entirely in the monitor view (its mode toggles were hidden)
+                state.setEditMode(1);
                 Object legacy = GsonUtils.getValue(obj, "legacyStudyPhysics");
                 state.setLegacyStudyPhysics(!(legacy instanceof Boolean b) || b);  // default on for PFM scenarios
                 Object isEnabled = GsonUtils.getValue(verificationJson, "isEnabled");
