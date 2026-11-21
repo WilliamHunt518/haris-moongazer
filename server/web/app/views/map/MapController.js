@@ -495,7 +495,10 @@ var MapController = {
         if (MapController.isEnabledUIOption("missionCost")) {
             $("#prediction_canvas").hide();
             $("#mission_prediction_canvas").hide();
-            $("#mission_cost_canvas").show();
+            $("#mission_cost_canvas").show().accordion("refresh");
+            // As in the study: the score sits under the mission cost, and there is no selected-drone view
+            $("#accordion_score").insertAfter("#mission_cost_canvas").show();
+            $("#accordion_smallview").hide();
             $("#addRemAgentButton").show();
             if (MapController.isEnabledUIOption("verification")) {
                 this.views.boundedPrediction.activate();

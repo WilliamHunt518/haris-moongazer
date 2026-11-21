@@ -41,6 +41,19 @@ jobs:
           curl -sf -X POST -d 'file-name=AllUITest.json' localhost:44101/mode/scenario > /dev/null
           curl -sf localhost:44101/state.json | grep -q '"gameId": "All UI Test"'
           curl -sf localhost:44101/sandbox.html | grep -q 'key=ci-placeholder-key'
+          # Every launch-page tile must load: scenario files exist and images are served
+          python3 - <<'PY'
+          import json, urllib.request, urllib.parse
+          base = "http://localhost:44101/"
+          tiles = json.load(urllib.request.urlopen(base + "showcase/showcase.json"))["tiles"]
+          for t in tiles:
+              urllib.request.urlopen(base + t["image"])
+              for f in {t["file"], *[v["file"] for v in t.get("variants", [])]}:
+                  urllib.request.urlopen(base + "reset", b"")
+                  data = urllib.parse.urlencode({"file-name": f}).encode()
+                  urllib.request.urlopen(base + "mode/scenario", data)
+                  print("ok", t["id"], f)
+          PY
       - name: Server output
         if: always()
         run: cat server.out || true

@@ -1,0 +1,31 @@
+/* HARIS Moongazer design tokens: the original HARIS navy, blue and orange, flattened and tidied */
+:root {
+    --mg-navy-900: #0d2a40;
+    --mg-navy: #133d5b;
+    --mg-navy-700: #1c5a85;
+    --mg-blue: #26759e;
+    --mg-blue-300: #3093c7;
+    --mg-blue-50: #e8f1f7;
+    --mg-orange: #e78404;
+    --mg-orange-400: #fb9d23;
+    --mg-orange-300: #ffaf46;
+    --mg-orange-50: #fff4e5;
+    --mg-green: #2f7d10;
+    --mg-green-300: #5bc41b;
+    --mg-red: #a32020;
+
+    --mg-bg: #eef2f5;
+    --mg-surface: #ffffff;
+    --mg-surface-2: #f6f8fa;
+    --mg-line: #d4dee1;
+    --mg-line-strong: #a9c0c8;
+    --mg-text: #17262f;
+    --mg-muted: #5a6b76;
+
+    --mg-radius: 10px;
+    --mg-radius-sm: 6px;
+    --mg-shadow: 0 1px 2px rgba(13, 42, 64, .08), 0 4px 14px rgba(13, 42, 64, .08);
+    --mg-shadow-lg: 0 2px 4px rgba(13, 42, 64, .10), 0 12px 32px rgba(13, 42, 64, .16);
+    --mg-font: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mg-mono: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, "Liberation Mono", monospace;
+}

@@ -143,6 +143,7 @@ public class HttpServer {
         addContentType("image/jpeg", "jpg", "jpeg");
         addContentType("image/png", "png");
         addContentType("image/svg+xml", "svg");
+        addContentType("image/webp", "webp");
         addContentType("image/x-icon", "ico");
         addContentType("text/css", "css");
         addContentType("text/html; charset=utf-8", "htm", "html");

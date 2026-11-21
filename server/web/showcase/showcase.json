@@ -1,0 +1,72 @@
+{
+  "_comment": "Tiles on the launch page (index.html). Each tile launches a scenario file from web/scenarios/. Variants are alternative files for the same feature, e.g. study conditions.",
+  "tiles": [
+    {
+      "id": "pfm",
+      "title": "Predictive fleet management",
+      "showcasing": "Runtime formal modelling with PRISM",
+      "description": "A delivery mission with live estimates of when it will finish. Before you add or remove a drone, the panel shows how the finish time and mission cost would change.",
+      "image": "showcase/img/pfm_amber.webp",
+      "file": "PFM_SFV.json",
+      "variants": [
+        {"label": "Live PRISM", "file": "PFM_SFV.json"},
+        {"label": "Placebo predictor", "file": "PFM_SDV.json"},
+        {"label": "No prediction", "file": "PFM_SNV.json"},
+        {"label": "Tutorial", "file": "PFM_Tutorial.json"}
+      ],
+      "papers": [
+        {"cite": "Abioye, Hunt, Gu et al.", "venue": "ACM THRI", "year": 2025},
+        {"cite": "Abioye et al.", "venue": "HRI Companion", "year": 2024}
+      ],
+      "note": "Live estimates need PRISM 4.8 (set PRISM_HOME)."
+    },
+    {
+      "id": "lenses",
+      "title": "Operator lenses",
+      "showcasing": "Switchable situational-awareness overlays",
+      "description": "Turn map lenses on and off: position uncertainty, communication range, path prediction, and the explored and hazard overlays.",
+      "image": "showcase/img/overview.webp",
+      "file": "AllUITest.json",
+      "papers": [
+        {"cite": "Soorati, Naiseh, Hunt et al.", "venue": "Putting AI in the Critical Loop (book chapter)", "year": 2024}
+      ]
+    },
+    {
+      "id": "triage",
+      "title": "Scan review and triage",
+      "showcasing": "Human triage directing ground vehicles",
+      "description": "Drones scan the area and the images arrive for review. Triage each find as high, medium or low priority, and ground vehicles respond in that order.",
+      "image": "showcase/img/triaged.webp",
+      "file": "usecase.json",
+      "papers": [
+        {"cite": "Soorati, Naiseh, Hunt et al.", "venue": "Putting AI in the Critical Loop (book chapter)", "year": 2024}
+      ]
+    },
+    {
+      "id": "programmer",
+      "title": "Drone programmer",
+      "showcasing": "Programmed agents under communication limits",
+      "description": "Agents run their own programmed policies. With limited communication, the operator sees their last known positions and the targets relayed back to the hub.",
+      "image": "showcase/img/prog_c.webp",
+      "file": "ProggedNoCom.json",
+      "variants": [
+        {"label": "Limited comms", "file": "ProggedNoCom.json"},
+        {"label": "Full comms", "file": "ProggedWithCom.json"}
+      ],
+      "papers": [
+        {"cite": "Soorati, Naiseh, Hunt et al.", "venue": "Putting AI in the Critical Loop (book chapter)", "year": 2024}
+      ]
+    },
+    {
+      "id": "heatmap",
+      "title": "Adaptive abstraction",
+      "showcasing": "Heatmaps that reduce operator workload",
+      "description": "A high-workload mission where agents and tasks are drawn as heatmaps instead of individual markers. Drag a cluster of agents onto a cluster of tasks to assign them.",
+      "image": "showcase/img/heat5.webp",
+      "file": "CurrentNonFixed/DynamicTaskingShiftHeatmap.json",
+      "papers": [
+        {"cite": "Abioye, Landowska, Hunt et al.", "venue": "arXiv (fNIRS workload study)", "year": 2024}
+      ]
+    }
+  ]
+}

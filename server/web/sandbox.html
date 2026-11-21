@@ -6,7 +6,7 @@
     <meta name="viewport"
           content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no, width=device-width"/>
 
-    <title>Simulator</title>
+    <title>HARIS Moongazer</title>
 
     <link rel="stylesheet" href="style.css"/>
     <link rel="stylesheet" href="lib/spop/spop.css">
@@ -17,6 +17,9 @@
     <script type="text/javascript" src="loadMain.js"></script>
 
     <link rel="stylesheet" type="text/css" href="http://w2ui.com/src/w2ui-1.4.min.css"/>
+    <!-- HARIS Moongazer theme: restyles only, loaded last -->
+    <link rel="stylesheet" href="theme/tokens.css"/>
+    <link rel="stylesheet" href="theme/sandbox.css"/>
     <!-- 20230822_1501h - Ayo Abioye (a.o.abioye@soton.ac.uk) added loading spinner to completion time prediction -->
     <style>
         .loader {
@@ -149,6 +152,11 @@
 <!-- Control Panel -->
 <div class="ui-layout-east">
     <div id="control">
+        <a class="mg-panel-brand" href="/" title="Back to scenarios">
+            <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="#0d2a40"/><path d="M20.5 6.5a10 10 0 1 0 5 13.2A8 8 0 1 1 20.5 6.5z" fill="#ffaf46"/></svg>
+            <span><strong>HARIS</strong> Moongazer</span>
+            <span class="mg-panel-home">← Scenarios</span>
+        </a>
         <!--Added by Y -->
         <!-- view mode change buttons -->
         <form>
