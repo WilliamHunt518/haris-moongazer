@@ -61,6 +61,17 @@ public class Simulator {
     private Thread mainLoopThread;
     private int completedTargets = 0;
 
+    // Predictive formal modelling (PFM) delivery missions, ported from dev_verification
+    private int port;
+    private double lastRemovalTime = -1;   // sim time (s) of the last agent removal at the hub
+    private double lastBat = 1;            // battery of the last agent removed
+    private int scoreLogCounter = 0;
+    private boolean pfmStarted = false;
+    private java.util.logging.Handler loggingFileHandler;
+    private static final int SCORE_LOG_EVERY_SECONDS = 10;
+    private static final double PFM_HUB_RECHARGE_PER_SECOND = 0.0625;  // 0.0025 per study-era tick x 25 ticks/s
+    private static final double PFM_PLACEHOLDER_ESTIMATE = 540;        // the study's 09:00 placeholder until the first result
+
     public Simulator() {
         instance = this;
         state = new State();
@@ -173,6 +184,10 @@ public class Simulator {
             //if (state.getScenarioEndTime() !=0 && System.currentTimeMillis() >= state.getScenarioEndTime()) {
             if (state.getTimeLimit() != 0 && state.getTime() >= state.getTimeLimit()) {
                 System.out.println("DONE BY TIME: " + state.getTime());
+                if (state.isPfmMission()) {
+                    logScoreTick();
+                    LOGGER.info(String.format("%s; TMCMP; Time completion - scenario completed by time with tasks completed (numComplete); %s ", getState().getTime(), getState().getCompletedTasks().size()));
+                }
                 /*
                 System.out.println("agents = " + state.getAgents());
                 int numFailed = 0;
@@ -205,17 +220,24 @@ public class Simulator {
                 if (missionController != null) {
                     missionController.spawnIfRequired(state.getTime());
                 }
+                if (state.isPfmMission()) {
+                    pfmEverySecond();
+                }
                 lowTickCounter = 0;
             }
 
 
 
-            //if (Simulator.instance.getState().getTime() > gameSpeed * 5) {
-            if (true) {
+            // PFM missions keep the study engine's 5 s settling delay before agents start
+            if (!state.isPfmMission() || state.getTime() > 5) {
 
                 if (state.getAllocationStyle().equals("dynamic")) {
                     if (state.getTasks().size() == 0) {// && getState().getHub() instanceof AgentHub && ((AgentHub) getState().getHub()).allAgentsNear()) {
                         System.out.println("DONE BY COMPLETION: " + state.getTime());
+                        if (state.isPfmMission()) {
+                            logScoreTick();
+                            LOGGER.info(String.format("%s; FLCMP; Full completion - scenario completed all tasks with most recent prediction in time (pred); %s ", getState().getTime(), state.getEstimatedCompletionTime()));
+                        }
                         System.out.println("agents = " + state.getAgents());
                         int numFailed = 0;
                         for (Agent a : state.getAgents()) {
@@ -230,47 +252,52 @@ public class Simulator {
                     }
 
                     List<Agent> agentsToRemove = new ArrayList<>();
-                    synchronized (state.getAgents()) {
-                        for (Agent agent : state.getAgents()) {
-                            if (agent instanceof AgentVirtual av) {
-                                if (agentController.modelFailure(av)) {
-                                    //modeller.failRecord(agent.getId(), agent.getAllocatedTaskId());
-                                }
+                    if (state.isPfmMission()) {
+                        stepPfmAgents(agentsToRemove);
+                    } else {
+                        synchronized (state.getAgents()) {
+                            for (Agent agent : state.getAgents()) {
+                                if (agent instanceof AgentVirtual av) {
+                                    if (agentController.modelFailure(av)) {
+                                        //modeller.failRecord(agent.getId(), agent.getAllocatedTaskId());
+                                    }
 
-                                if (agent.isTimedOut()) {
-                                    //System.out.println("timed out, passing");
-                                } else if (!av.isAlive() && (!av.isGoingHome() || av.isHome())) {
-                                    av.charge();
-                                } else if (agent.getBattery() < 0.15 && av.isAlive()) {
-                                    //modeller.failRecord(agent.getId(), agent.getAllocatedTaskId());
-                                    av.killBattery();
-                                } else if (av.getTask() != null || (av.isGoingHome() && !av.isHome())) {
-                                    //System.out.println(agent);
-                                    av.step(state.isFlockingEnabled());
-                                } else {
-                                    if (getAgentController().getScheduledRemovals() > 0) {
-                                        agentsToRemove.add(agent);
-                                        getAgentController().decrementRemoval();
-                                    } else if (getTaskController().checkForFreeTasks()) {
-                                        av.stopGoingHome();
-                                        getAllocator().dynamicAssign(av);
-                                        if (av.getAllocatedTaskId() != null && av.getTask().getType() == 6) {
-                                            av.setType("withpack");
-                                            av.setMarker("UAVWithPack");
-                                        }
-                                        Simulator.instance.getScoreController().incrementCompletedTask();
-                                        // In-runtime allocation model
-                                        //double successChance = modeller.calculateAll(agent);
-                                        //state.setSuccessChance(successChance);
-                                    } else if (agent.getBattery() < 0.9 && av.isAlive()) {
-                                        // If no tasks available, charge up in case we need to replace it
+                                    if (agent.isTimedOut()) {
+                                        //System.out.println("timed out, passing");
+                                    } else if (!av.isAlive() && (!av.isGoingHome() || av.isHome())) {
                                         av.charge();
+                                    } else if (agent.getBattery() < 0.15 && av.isAlive()) {
+                                        //modeller.failRecord(agent.getId(), agent.getAllocatedTaskId());
+                                        av.killBattery();
+                                    } else if (av.getTask() != null || (av.isGoingHome() && !av.isHome())) {
+                                        //System.out.println(agent);
+                                        av.step(state.isFlockingEnabled());
                                     } else {
-                                        av.heartbeat();
+                                        if (getAgentController().getScheduledRemovals() > 0) {
+                                            agentsToRemove.add(agent);
+                                            getAgentController().decrementRemoval();
+                                        } else if (getTaskController().checkForFreeTasks()) {
+                                            av.stopGoingHome();
+                                            getAllocator().dynamicAssign(av);
+                                            if (av.getAllocatedTaskId() != null && av.getTask().getType() == 6) {
+                                                av.setType("withpack");
+                                                av.setMarker("UAVWithPack");
+                                            }
+                                            Simulator.instance.getScoreController().incrementCompletedTask();
+                                            // In-runtime allocation model
+                                            //double successChance = modeller.calculateAll(agent);
+                                            //state.setSuccessChance(successChance);
+                                        } else if (agent.getBattery() < 0.9 && av.isAlive()) {
+                                            // If no tasks available, charge up in case we need to replace it
+                                            av.charge();
+                                        } else {
+                                            av.heartbeat();
+                                        }
                                     }
                                 }
                             }
                         }
+
                     }
 
                     agentsToRemove.forEach(a -> {
@@ -311,12 +338,16 @@ public class Simulator {
                     }
                 }
 
-                synchronized (Simulator.instance.getState().getCompletedTasks()) {
-                    completedTasks.stream().filter(task -> task.getType() == 6).forEach(task -> task.getAgents().forEach(a -> a.setType("standard")));
-                    //if (!completedTasks.isEmpty()) {
-                        //completedTasks.forEach(t -> modeller.passRecords(t.getId()));
-                        completedTasks.forEach(Task::complete);
-                    //}
+                if (state.isPfmMission()) {
+                    completePfmTasks(completedTasks);
+                } else {
+                    synchronized (Simulator.instance.getState().getCompletedTasks()) {
+                        completedTasks.stream().filter(task -> task.getType() == 6).forEach(task -> task.getAgents().forEach(a -> a.setType("standard")));
+                        //if (!completedTasks.isEmpty()) {
+                            //completedTasks.forEach(t -> modeller.passRecords(t.getId()));
+                            completedTasks.forEach(Task::complete);
+                        //}
+                    }
                 }
 
                 //if (!modeller.isStarted()) {
@@ -346,22 +377,129 @@ public class Simulator {
     }
 
     /**
-     * Runs the model for the current setup
+     * Runs the PRISM model (current, one agent fewer, one agent more) for the current state.
+     * Does nothing unless the scenario's verificationParameters enable it (checked in ModelCaller).
      */
     public void updateMissionModel() {
-        if (!state.getModelStyle().equals("off")) {
-            // Update model and start thread
-            boolean generatedCurrent = ModelGenerator.run(state, webRef);
-            boolean generatedOver = ModelGenerator.runOver(state, webRef);
-            boolean generatedUnder = ModelGenerator.runUnder(state, webRef);
-            if (generatedCurrent && generatedOver && generatedUnder) {
-                //if (generatedCurrent) {
-                System.out.println("Model generated successfully");
-                modelCaller.startThread(webRef);
-            } else {
-                System.out.println("Generation failure");
+        updateMissionModel(0);
+    }
+
+    /**
+     * As {@link #updateMissionModel()}, discounting agents already scheduled for removal (min 4 agents).
+     */
+    public void updateMissionModel(int numRemovals) {
+        ArrayList<double[][]> generatedCurrent = ModelGenerator.run(state, webRef);
+        while (numRemovals > 0 && generatedCurrent.get(0).length - numRemovals > 4) { // TODO make max removals (4) not hard coded
+            generatedCurrent.set(0, Arrays.copyOf(generatedCurrent.get(0), generatedCurrent.get(0).length - 1));
+            numRemovals--;
+        }
+        ArrayList<double[][]> generatedOver = ModelGenerator.runOver(generatedCurrent);
+        ArrayList<double[][]> generatedUnder = ModelGenerator.runUnder(generatedCurrent);
+        ArrayList<ArrayList<double[][]>> config = new ArrayList<>(3);
+        config.add(generatedUnder);
+        config.add(generatedCurrent);
+        config.add(generatedOver);
+        modelCaller.startThread(webRef, config);
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // PFM delivery missions. These rules are the dev_verification engine's, used in the PFM studies
+    // (Abioye et al. HRI 2024, THRI 2025). Times are converted from study-era sim time (5x real time)
+    // to the current clock (real seconds).
+    // ---------------------------------------------------------------------------------------------
+
+    /** Agent rules for PFM delivery missions: charging, battery death, hub removals and reassignment. */
+    private void stepPfmAgents(List<Agent> agentsToRemove) {
+        synchronized (state.getAgents()) {
+            for (Agent agent : state.getAgents()) {
+                if (!(agent instanceof AgentVirtual av)) continue;
+                if (agent.isTimedOut()) {
+                    // pass
+                } else if (!av.isAlive() && (!av.isGoingHome() || av.isHome()) && state.getScheduledRemovals() == 0) {
+                    av.charge();
+                } else if (agent.getBattery() < 0.15 && av.isAlive()) {
+                    LOGGER.info(String.format("%s; BTKIL; Agent battery dead - going home (agentId); %s;", state.getTime(), av.getId()));
+                    av.killBattery();
+                } else if (av.getTask() != null || (av.isGoingHome() && !av.isHome())) {
+                    av.step(state.isFlockingEnabled());
+                } else if (state.getScheduledRemovals() > 0) {
+                    LOGGER.info(String.format("%s; REMAG; Successfully removed agent - now there are (agentId, numAgents); %s; %s ", state.getTime(), av.getId(), state.getAgents().size() - 1));
+                    agentsToRemove.add(agent);
+                    lastRemovalTime = state.getTime();
+                    lastBat = agent.getBattery();
+                    state.decrementRemovals();
+                } else if (getTaskController().checkForFreeTasks()) {
+                    av.stopGoingHome();
+                    if (av.getBattery() > 0.3) {
+                        getAllocator().dynamicAssign(av, false);
+                        if (av.getTask() != null) {
+                            LOGGER.info(String.format("%s; ASGN; Agent assigned to task (agentId, taskId); %s; %s ", state.getTime(), av.getId(), av.getTask().getId()));
+                        }
+                    } else {
+                        av.killBattery();
+                    }
+                } else if (agent.getBattery() < 0.5 && av.isAlive()) {
+                    // No free tasks: charge up in case this agent is needed as a replacement
+                    av.charge();
+                } else {
+                    // Full battery and no free task: back up an existing task
+                    getAllocator().dynamicAssign(agent, true);
+                }
             }
         }
+    }
+
+    private void completePfmTasks(List<Task> completedTasks) {
+        for (Task task : completedTasks) {
+            LOGGER.info(String.format("%s; TSKCM; Task completed by agent - there are now tasks left (taskId, agentId numTasks); %s; %s; %s ", state.getTime(), task.getId(), task.getAgents().get(0).getId(), state.getTasks().size() - 1));
+            task.getAgents().forEach(a -> a.setType("standard"));
+            task.complete();
+            scoreController.incrementCompletedTask();
+        }
+    }
+
+    /** Called once per simulated second during PFM missions: placeholder estimate, upkeep, score log, autorun. */
+    private void pfmEverySecond() {
+        if (!pfmStarted && state.getTime() > 5) {
+            pfmStarted = true;
+            state.setEstimatedCompletionTime(PFM_PLACEHOLDER_ESTIMATE);
+            state.setEstimatedCompletionUnderTime(PFM_PLACEHOLDER_ESTIMATE);
+            state.setEstimatedCompletionOverTime(PFM_PLACEHOLDER_ESTIMATE);
+        }
+        scoreController.handleUpkeep();
+        if (++scoreLogCounter >= SCORE_LOG_EVERY_SECONDS) {
+            logScoreTick();
+            scoreLogCounter = 0;
+        }
+        if (modelCaller.getAutoRunFrequency() != 0 && state.getTime() > modelCaller.getNextAutoRun()) {
+            LOGGER.info(String.format("%s; AUTRN; Autorun of model;", state.getTime()));
+            updateMissionModel();
+            modelCaller.setNextAutoRun(state.getTime() + modelCaller.getAutoRunFrequency());
+        }
+    }
+
+    private void logScoreTick() {
+        LOGGER.info(String.format("%s; SCORE; Score tick - (numAgents, completedTasks, score, missionCost, previous_mission_cost); %s; %s; %s; %s; %s ",
+                state.getTime(), state.getAgents().size() - 1, scoreController.getCompletedTasks(), scoreController.getScore(),
+                scoreController.getMission_cost(), scoreController.getPrevious_mission_cost()));
+    }
+
+    /** Battery for an agent re-added at the hub: the last removed agent's battery, recharged for the time since. */
+    public double pfmBatteryForReaddedAgent() {
+        double secondsSinceRemoval = lastRemovalTime < 0 ? 1000 : state.getTime() - lastRemovalTime;
+        double bat = Math.min(lastBat + secondsSinceRemoval * PFM_HUB_RECHARGE_PER_SECOND, 1.0);
+        lastRemovalTime = -1;
+        lastBat = 1;
+        return bat;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    /** The current study log file handler, or null before a participant is registered. */
+    public java.util.logging.Handler getLoggingFileHandler() {
+        return loggingFileHandler;
     }
 
     private void passthrough() {
@@ -456,6 +594,10 @@ public class Simulator {
         if (missionController != null) {
             missionController.reset();
         }
+        pfmStarted = false;
+        scoreLogCounter = 0;
+        lastRemovalTime = -1;
+        lastBat = 1;
         //modeller.stop();  // NOTE, if we disable the normal modeller, we will need to slightly refactor to give the modelCaller this start/stop functionality
 
         LOGGER.info(String.format("%s; SVRST; Server reset ", getState().getTime()));
@@ -478,6 +620,8 @@ public class Simulator {
             hazardController.resetLogger(fileHandler);
             allocator.resetLogger(fileHandler);
             imageController.resetLogger(fileHandler);
+            modelCaller.resetLogger(fileHandler);
+            this.loggingFileHandler = fileHandler;
             LOGGER.info(String.format("%s; LGSTRT; Reset log (scenario, username); %s; %s ", getState().getTime(), state.getGameId(), userName));
 
         } catch (final IOException e) {
@@ -502,8 +646,8 @@ public class Simulator {
     }
 
     private void pushConfig(int port) {
-        webRef = webRef;//+port;
-        connectionController.init(port);//), webRef);
+        this.port = port;
+        connectionController.init(port);
     }
 
     private boolean loadScenarioFromFile(String scenarioFile) {
@@ -512,6 +656,30 @@ public class Simulator {
             Object obj = GsonUtils.fromJson(json);
 
             this.state.setGameId(GsonUtils.getValue(obj, "gameId"));
+
+            // PFM delivery missions: must be read before agents are created (legacy physics sets their speed)
+            Object verificationJson = GsonUtils.getValue(obj, "verificationParameters");
+            if (verificationJson != null) {
+                state.setPfmMission(true);
+                // The PFM study ran entirely in the monitor view (its mode toggles were hidden)
+                state.setEditMode(1);
+                Object legacy = GsonUtils.getValue(obj, "legacyStudyPhysics");
+                state.setLegacyStudyPhysics(!(legacy instanceof Boolean b) || b);  // default on for PFM scenarios
+                Object isEnabled = GsonUtils.getValue(verificationJson, "isEnabled");
+                if (isEnabled instanceof Boolean b) modelCaller.setEnabled(b);
+                Object isDummy = GsonUtils.getValue(verificationJson, "isDummy");
+                if (isDummy instanceof Boolean b) modelCaller.setDummy(b);
+                if (GsonUtils.getValue(verificationJson, "samples") != null)
+                    modelCaller.setSamples(((Double) GsonUtils.getValue(verificationJson, "samples")).intValue());
+                if (GsonUtils.getValue(verificationJson, "delayTime") != null)
+                    modelCaller.setDelayTime(((Double) GsonUtils.getValue(verificationJson, "delayTime")).intValue());
+                if (GsonUtils.getValue(verificationJson, "delayBound") != null)
+                    modelCaller.setDelayBound(((Double) GsonUtils.getValue(verificationJson, "delayBound")).intValue());
+                if (GsonUtils.getValue(verificationJson, "autoRunFrequency") != null)
+                    modelCaller.setAutorunFrequency(((Double) GsonUtils.getValue(verificationJson, "autoRunFrequency")).intValue());
+            } else if (GsonUtils.getValue(obj, "legacyStudyPhysics") instanceof Boolean b) {
+                state.setLegacyStudyPhysics(b);
+            }
             this.state.setGameDescription(GsonUtils.getValue(obj, "gameDescription"));
             Object centre = GsonUtils.getValue(obj, "gameCentre");
             this.state.setGameCentre(new Coordinate(GsonUtils.getValue(centre, "lat"), GsonUtils.getValue(centre, "lng")));
@@ -634,6 +802,8 @@ public class Simulator {
                 Object modelStyle = GsonUtils.getValue(obj, "modelStyle");
                 if(modelStyle.getClass() == String.class) {
                     state.setModelStyle((String) modelStyle);
+                    // PFM: "parallel" runs the current, one-more and one-fewer agent models together
+                    modelCaller.setStyle((String) modelStyle);
                 }
             }
 
@@ -676,6 +846,11 @@ public class Simulator {
                     state.addUIOption(name, uIPair);
                 }
 
+            }
+            // PFM missions always show the mission cost panel and the add/remove agent buttons. The estimated
+            // completion time panel is the scenario's "verification" UI option (off in the control conditions).
+            if (state.isPfmMission()) {
+                state.addUIOption("missionCost", new boolean[]{true, false});
             }
 
             if(GsonUtils.hasKey(obj,"uncertaintyRadius")) {

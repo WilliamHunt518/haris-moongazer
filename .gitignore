@@ -160,3 +160,9 @@ config.properties
 # Gradle
 server/.gradle/
 server/build/
+
+# PFM: models and results PRISM generates at run time (templates and property stay tracked)
+server/web/verification/*
+!server/web/verification/template_*.txt
+!server/web/verification/property.pctl
+server/drones.txt

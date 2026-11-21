@@ -44,6 +44,7 @@ var MapController = {
         this.isEnabledUIOption = _.bind(this.isEnabledUIOption, context);
         this.toggleUIOption = _.bind(this.toggleUIOption, context);
 
+        this.popUpRemovals = _.bind(this.popUpRemovals, context);
     },
     /**
      * Bind listeners for map view.
@@ -170,6 +171,9 @@ var MapController = {
         });
         this.state.on("change:uiOptions", function () {
             MapController.updateUIFeatures();
+        });
+        this.state.on("change:scheduledRemovals", function () {
+            MapController.popUpRemovals()
         });
 
         //Map listeners
@@ -486,6 +490,25 @@ var MapController = {
             $("#addRemAgentButton").show()
         }
 
+        // PFM (predictive fleet management) missions: mission cost and add/remove agent buttons, plus the estimated
+        // completion time when the scenario enables "verification". The older success-chance panels stay hidden.
+        if (MapController.isEnabledUIOption("missionCost")) {
+            $("#prediction_canvas").hide();
+            $("#mission_prediction_canvas").hide();
+            $("#mission_cost_canvas").show();
+            $("#addRemAgentButton").show();
+            if (MapController.isEnabledUIOption("verification")) {
+                this.views.boundedPrediction.activate();
+                $("#bounded_prediction_canvas h3").first().text("Estimated Completion Time");
+                $("#bounded_prediction_canvas").show();
+            } else {
+                this.views.boundedPrediction.deactivate();
+                $("#bounded_prediction_canvas").hide();
+            }
+        } else {
+            $("#mission_cost_canvas").hide();
+        }
+
         /*
         this.state.getUiOptions().forEach(function (option) {
             if (option === "predictions") {
@@ -494,6 +517,9 @@ var MapController = {
                 $("#uncertainties_wrapper_div").show();
             } else if (option === "ranges") {
                 $("#ranges_wrapper_div").show();
+            } else if (option === "verification") {
+                self.views.boundedPrediction.activate()
+                $("#bounded_prediction_canvas").show();
             }
         });
 
@@ -595,6 +621,22 @@ var MapController = {
     },
     clearReviewImage : function () {
         this.views.review.clearImage();
+    },
+    popUpRemovals: function () {
+        console.log("rems = " + this.state.getScheduledRemovals())
+        if (this.state.getScheduledRemovals() > 0) {
+            var uid = "removal_pop"
+            var content = _.template($("#popup_left_right").html(), {
+                left_content: "Scheduled to remove " + this.state.getScheduledRemovals() + " UAV",
+                right_content: "View",
+                uid: uid
+            });
+
+            spop({
+                template: content,
+                style: 'error'
+            });
+        }
     },
     abortAllocation: function() {
         var mainAllocation = this.state.getAllocation();

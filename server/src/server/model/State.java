@@ -86,6 +86,16 @@ public class State {
     private double missionSuccessChance;
     private double missionSuccessOverChance;
     private double missionSuccessUnderChance;
+    // Predictive formal modelling (PFM): estimated completion times in simulation seconds, -1 while unknown
+    private double estimatedCompletionTime = -1;
+    private double estimatedCompletionUnderTime = -1;
+    private double estimatedCompletionOverTime = -1;
+    private int scheduledRemovals = 0;
+    private int tempCanAddRemAgents = 0;
+    // True for PFM delivery missions (scenario has verificationParameters); selects the study's mission rules
+    private boolean pfmMission = false;
+    // Reproduce the study-era engine's agent speed and battery per real second (see Agent.LEGACY_*)
+    private boolean legacyStudyPhysics = false;
     private double missionBoundedSuccessChance;
     private double missionBoundedSuccessUnderChance;
     private double missionBoundedSuccessOverChance;
@@ -132,6 +142,7 @@ public class State {
     }
 
     public synchronized void reset() {
+        resetPfm();
         // Define defaults
         time = 0;
         timeLimit = 0;    // 0 means no time limit
@@ -958,4 +969,41 @@ public class State {
             return jsonObject;
         }
     };
+
+    // ---- Predictive formal modelling (ported from dev_verification) ----
+
+    public void setEstimatedCompletionTime(double t) { this.estimatedCompletionTime = t; }
+    public void setEstimatedCompletionUnderTime(double t) { this.estimatedCompletionUnderTime = t; }
+    public void setEstimatedCompletionOverTime(double t) { this.estimatedCompletionOverTime = t; }
+    public double getEstimatedCompletionTime() { return estimatedCompletionTime; }
+    public double getEstimatedCompletionUnderTime() { return estimatedCompletionUnderTime; }
+    public double getEstimatedCompletionOverTime() { return estimatedCompletionOverTime; }
+
+    public int getScheduledRemovals() { return scheduledRemovals; }
+    public void setScheduledRemovals(int scheduledRemovals) { this.scheduledRemovals = scheduledRemovals; }
+    public int decrementRemovals() { return --scheduledRemovals; }
+    public int incrementRemovals() { return ++scheduledRemovals; }
+
+    /** -1: at the minimum (can't remove), 1: at the maximum (can't add), 0: either. Bounds 4..11 as in the PFM study. */
+    public void updateTempAddRemTicker() {
+        tempCanAddRemAgents = (getAgents().size() - scheduledRemovals > 4) ? 0 : -1;
+        if (tempCanAddRemAgents == 0) {
+            tempCanAddRemAgents = (getAgents().size() - scheduledRemovals < 11) ? 0 : 1;
+        }
+    }
+
+    public boolean isPfmMission() { return pfmMission; }
+    public boolean isLegacyStudyPhysics() { return legacyStudyPhysics; }
+    public void setLegacyStudyPhysics(boolean legacyStudyPhysics) { this.legacyStudyPhysics = legacyStudyPhysics; }
+    public void setPfmMission(boolean pfmMission) { this.pfmMission = pfmMission; }
+
+    public void resetPfm() {
+        estimatedCompletionTime = -1;
+        estimatedCompletionUnderTime = -1;
+        estimatedCompletionOverTime = -1;
+        scheduledRemovals = 0;
+        tempCanAddRemAgents = 0;
+        pfmMission = false;
+        legacyStudyPhysics = false;
+    }
 }
