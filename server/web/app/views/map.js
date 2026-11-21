@@ -6,7 +6,7 @@ var agentRoutes = {};
 var count = 3;
 var ros = null;
 var connected = false;
-var api = new $.provStoreApi({username: 'atomicorchid', key: '2ce8131697d4edfcb22e701e78d72f512a94d310'});
+var api = new $.provStoreApi({username: 'atomicorchid', key: '' /* ProvStore upload is disabled; key removed */});
 var ps = PostService();
 
 var suppressedLenses = {agent: true,
