@@ -1,0 +1,45 @@
+// HARIS Moongazer build. Run from this folder:
+//   ./gradlew run              start the simulator on http://localhost:44101
+//   ./gradlew run --args=8000  start it on another port
+//   ./gradlew installDist      build a runnable copy in build/install/
+// The Google Maps key comes from HARIS_MAPS_KEY (see config.example.properties); it is never stored here.
+plugins {
+    id 'application'
+}
+
+group = 'uk.ac.soton.haris'
+version = '0.1.0-moongazer'
+
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(21) }
+}
+
+repositories { mavenCentral() }
+
+dependencies {
+    // Same versions as the jars previously vendored in libs/, to keep behaviour identical.
+    implementation 'com.google.code.gson:gson:2.2.2'
+    implementation 'com.rabbitmq:amqp-client:3.6.2'   // only for the legacy real-drone link; optional at runtime
+}
+
+sourceSets {
+    main { java { srcDirs = ['src'] } }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.compilerArgs += ['-nowarn']
+}
+
+application {
+    mainClass = 'server.Simulator'
+}
+
+// The simulator finds web/, the logging config and log/ relative to the working directory.
+tasks.named('run') {
+    workingDir = projectDir
+    standardInput = System.in
+    doFirst { file('log').mkdirs() }
+    // Pass PRISM_HOME through as a system property for the prediction features, if set.
+    if (System.getenv('PRISM_HOME')) systemProperty 'prism.home', System.getenv('PRISM_HOME')
+}

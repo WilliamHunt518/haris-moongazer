@@ -1,0 +1,9 @@
+services:
+  haris:
+    build: .
+    ports:
+      - "44101:44101"
+    environment:
+      - HARIS_MAPS_KEY          # taken from your shell or a .env file next to this one (git-ignored)
+    volumes:
+      - ./log:/app/log          # study logs land in server/log on the host
