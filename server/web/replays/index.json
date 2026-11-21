@@ -1,0 +1,52 @@
+{
+ "replays": [
+  {
+   "id": "heatmap",
+   "file": "CurrentNonFixed/DynamicTaskingShiftHeatmap.json",
+   "title": "Dynamic High (HEATMAP)",
+   "duration": 58.25
+  },
+  {
+   "id": "lenses",
+   "file": "AllUITest.json",
+   "title": "All UI Test",
+   "duration": 120.35
+  },
+  {
+   "id": "pfm-live-prism",
+   "file": "PFM_SFV.json",
+   "title": "SFV",
+   "duration": 240.35
+  },
+  {
+   "id": "pfm-no-prediction",
+   "file": "PFM_SNV.json",
+   "title": "SNV",
+   "duration": 240.35
+  },
+  {
+   "id": "pfm-placebo",
+   "file": "PFM_SDV.json",
+   "title": "SDV",
+   "duration": 240.35
+  },
+  {
+   "id": "programmer-full-comms",
+   "file": "ProggedWithCom.json",
+   "title": "PROGRAMMED & NOT CONSTRAINED",
+   "duration": 150.35
+  },
+  {
+   "id": "programmer-limited-comms",
+   "file": "ProggedNoCom.json",
+   "title": "PROGRAMMED & CONSTRAINED",
+   "duration": 150.35
+  },
+  {
+   "id": "triage",
+   "file": "usecase.json",
+   "title": "UseCase draft",
+   "duration": 180.35
+  }
+ ]
+}

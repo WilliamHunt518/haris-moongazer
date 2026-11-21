@@ -33,6 +33,7 @@ public class AllocationHandler extends RestHandler {
                 break;
             case "groupAllocate":
                 handleGroupAllocate(req, resp);
+                break;
             case "undo":
                 handleUndo(resp);
                 break;

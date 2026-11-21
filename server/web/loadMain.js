@@ -97,6 +97,7 @@ $LAB.setOptions({
 
     // ----- Main -----
     .script("app/timing.js")
+    .script("app/replay.js")
     .script("app/main.js")
 
     .wait(function () {
