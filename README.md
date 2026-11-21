@@ -6,7 +6,7 @@
 
 ## Quick start
 
-You need Java 21 and a Google Maps JavaScript API key (restrict it by HTTP referrer, e.g. `http://localhost:44101/*`).
+You need a JDK (17 or newer; Gradle downloads Java 21 for the build if you don't have it) and a Google Maps JavaScript API key (restrict it by HTTP referrer, e.g. `http://localhost:44101/*`).
 
 ```bash
 cd server

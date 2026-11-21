@@ -28,6 +28,7 @@ public final class MapsKey {
 
     private static final Logger LOGGER = Logger.getLogger(MapsKey.class.getName());
     private static volatile String cached;
+    private static volatile boolean warned;
 
     private MapsKey() {}
 
@@ -35,9 +36,14 @@ public final class MapsKey {
         String k = cached;
         if (k != null) return k;
         k = lookup();
-        if (k.isEmpty())
-            LOGGER.warning("No Google Maps key configured. Set " + ENV_VAR + " (or " + SYS_PROP
-                    + ", or maps.key in " + CONFIG_FILE + "). Maps will not load.");
+        if (k.isEmpty()) {
+            // Not cached, so a key added to config.properties later is picked up on the next page load
+            if (!warned)
+                LOGGER.warning("No Google Maps key configured. Set " + ENV_VAR + " (or " + SYS_PROP
+                        + ", or maps.key in " + CONFIG_FILE + "). Maps will not load.");
+            warned = true;
+            return k;
+        }
         cached = k;
         return k;
     }
