@@ -96,6 +96,7 @@ $LAB.setOptions({
     .script("app/models/state.js")
 
     // ----- Main -----
+    .script("app/timing.js")
     .script("app/main.js")
 
     .wait(function () {

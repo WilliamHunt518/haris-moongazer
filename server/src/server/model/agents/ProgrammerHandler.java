@@ -37,6 +37,11 @@ public class ProgrammerHandler implements Serializable {
     private boolean leader = false;
 
     private boolean isGoingHome = false;
+    /** Timeouts are written in 5 Hz ticks; convert to the current tick rate so they keep their length in seconds. */
+    private static int scaledTicks(int baseTicks) {
+        return Math.max(1, (int) Math.round(baseTicks / Simulator.instance.getTickFraction()));
+    }
+
     private int stepCounter = 0;
     private int pingCounter = 0;
 
@@ -73,7 +78,7 @@ public class ProgrammerHandler implements Serializable {
             agent.setNetworkID(agent.getId());
             declareSelf(communicationRange);
             agentProgrammer.setup();
-        } else if (pingCounter >= pingTimeout) {
+        } else if (pingCounter >= scaledTicks(pingTimeout)) {
             declareSelf(communicationRange);
             checkForTargets();
             declareTargets(communicationRange);
@@ -124,7 +129,7 @@ public class ProgrammerHandler implements Serializable {
             agent.setNetworkID("HUB");
             declareSelf(communicationRange);
             agentProgrammer.setup();
-        } else if (pingCounter >= pingTimeout) {
+        } else if (pingCounter >= scaledTicks(pingTimeout)) {
             declareSelf(communicationRange); // This must be separate, as order matters for the first case
             broadcastTasks();
             declareTargets(communicationRange);
@@ -746,7 +751,7 @@ public class ProgrammerHandler implements Serializable {
                     Position neighbourNewPos = new Position(new Coordinate(Double.parseDouble(locX), Double.parseDouble(locY)), Double.parseDouble(heading), Boolean.parseBoolean(stopped), false, Integer.parseInt(timeStamp));
                     if (!neighbours.containsKey(id) ||
                             (neighbours.get(id).getDirectlyConnected()
-                            && neighbours.get(id).getLastUpdateTime() + AGENT_TIMEOUT < stepCounter)) {
+                            && neighbours.get(id).getLastUpdateTime() + scaledTicks(AGENT_TIMEOUT) < stepCounter)) {
                         // Either we have no existing record of this at all, in which case we add it as INHERITED,
                         //  or we consider it connected, but it was last updated directly too long ago. Disconnect but
                         //  record as inherited
@@ -1395,7 +1400,7 @@ public class ProgrammerHandler implements Serializable {
         for (var entry : neighbours.entrySet()) {
             if (entry.getKey().equals(id)) {
                 // Return true if the record of this is sufficiently recent
-                return entry.getValue().getLastUpdateTime() + AGENT_TIMEOUT > stepCounter;
+                return entry.getValue().getLastUpdateTime() + scaledTicks(AGENT_TIMEOUT) > stepCounter;
             }
         }
         // This is for if it is completely unknown

@@ -11,16 +11,38 @@ function menuInit() {
 
     var launchScenario = function (fileName, button) {
         if (button) button.prop("disabled", true).text("Loading…");
-        // Reset first: loading a scenario on top of another one fails on the server
+        // Reset first: loading a scenario on top of another one fails on the server.
+        // Then set the engine tick rate for the chosen look (classic keeps the original 5 Hz).
         $.post('/reset').always(function () {
-            $.post('/mode/scenario', {'file-name': fileName}, function () {
-                window.location = "/sandbox.html";
-            }).fail(function () {
-                if (button) button.prop("disabled", false).text("Launch");
-                showError("Unable to load " + fileName + ".");
+            setLookTiming().always(function () {
+                $.post('/mode/scenario', {'file-name': fileName}, function () {
+                    window.location = "/sandbox.html";
+                }).fail(function () {
+                    if (button) button.prop("disabled", false).text("Launch");
+                    showError("Unable to load " + fileName + ".");
+                });
             });
         });
     };
+
+    var setLookTiming = function () {
+        return $.post('/mode/timing', {speed: 1, tickRate: window.MG_LOOK_TICK_RATE || 10});
+    };
+
+    // ------ Look switch (modern / classic) ------
+    var showLook = function () {
+        $(".mg-look button").each(function () {
+            $(this).attr("aria-pressed", String($(this).data("look") === window.MG_LOOK));
+        });
+    };
+    $(".mg-look button").on("click", function () {
+        window.MG_LOOK = $(this).data("look");
+        window.MG_LOOK_TICK_RATE = window.MG_LOOK === "classic" ? 5 : 10;
+        try { window.localStorage.setItem("mg-look", window.MG_LOOK); } catch (e) { /* not remembered */ }
+        document.documentElement.setAttribute("data-look", window.MG_LOOK);
+        showLook();
+    });
+    showLook();
 
     var esc = function (s) { return $("<div>").text(s == null ? "" : String(s)).html(); };
 
@@ -79,9 +101,11 @@ function menuInit() {
     // ------ Sandbox ------
     $("#sandboxMedia").on('click', function () { $("#buttonSandboxMode").click(); });
     $("#buttonSandboxMode").on('click', function () {
-        $.post('/mode/sandbox', function () {
-            window.location = "/sandbox.html";
-        }).fail(function () { showError("Unable to open the sandbox."); });
+        setLookTiming().always(function () {
+            $.post('/mode/sandbox', function () {
+                window.location = "/sandbox.html";
+            }).fail(function () { showError("Unable to open the sandbox."); });
+        });
     });
 
     // ------ In-progress banner ------

@@ -16,6 +16,8 @@ export HARIS_MAPS_KEY=<your-key>      # Windows PowerShell: $env:HARIS_MAPS_KEY=
 
 Then open <http://localhost:44101>. The launch page shows a tile for each showcased feature, plus the sandbox and a list of every scenario. Scenarios live in `server/web/scenarios/`.
 
+- **Classic or modern look:** the switch on the launch page (or `?look=classic` on any page) picks the interface. Classic is the original look at the original 5 Hz engine rate and 400 ms refresh. Modern is the refreshed look at 10 Hz.
+- **Speed and tick rate:** the sliders under the map lenses change them live (speed ×0.25 to ×8, tick rate 2 to 30 Hz), or `POST /mode/timing` with `speed` and/or `tickRate`. A scenario can set its own `"tickRate"`. Behaviour per simulated second (movement, turning, battery, failures, comms timeouts) is the same at any tick rate.
 - **Add or change a showcase tile:** edit `server/web/showcase/showcase.json` (title, description, papers, scenario file and optional variants) and put a 16:10 image in `server/web/showcase/img/`.
 
 - **Another port:** `./gradlew run --args=8000`

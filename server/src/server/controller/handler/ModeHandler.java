@@ -33,6 +33,9 @@ public class ModeHandler extends RestHandler {
             case "/scenario/start":
                 handleScenarioStart(resp);
                 break;
+            case "/timing":
+                handleTiming(req, resp);
+                break;
             default:
                 throw new UnregisteredPathException("No method for handling POST request on " + req.getPath());
         }
@@ -85,6 +88,28 @@ public class ModeHandler extends RestHandler {
             resp.sendOkay();
         else
             resp.sendError(400, "Unable to start scenario from file " + scenarioFileName);
+    }
+
+    /** Live speed and tick rate: POST /mode/timing with speed (x real time) and/or tickRate (ticks per second). */
+    private void handleTiming(Request req, Response resp) throws IOException {
+        Map<String, String> params = req.getParams();
+        try {
+            Double speed = params.containsKey("speed") ? Double.valueOf(params.get("speed")) : null;
+            Double tickRate = params.containsKey("tickRate") ? Double.valueOf(params.get("tickRate")) : null;
+            if (speed == null && tickRate == null) {
+                resp.sendError(400, "Expected speed and/or tickRate");
+                return;
+            }
+            this.simulator.setTiming(speed, tickRate);
+        } catch (NumberFormatException e) {
+            resp.sendError(400, "speed and tickRate must be numbers");
+            return;
+        }
+        JsonObject out = new JsonObject();
+        out.addProperty("speed", this.simulator.getSimSpeed());
+        out.addProperty("tickRate", this.simulator.getTickRate());
+        resp.getHeaders().add("Content-type", "application/json; charset=utf-8");
+        resp.send(200, out.toString());
     }
 
     private void handleScenarioStart(Response resp) throws IOException {
