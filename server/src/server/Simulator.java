@@ -627,6 +627,7 @@ public class Simulator {
         if (missionController != null) {
             missionController.reset();
         }
+        allocator.clearTeamAllocationUndo();
         pfmStarted = false;
         scoreLogCounter = 0;
         lastRemovalTime = -1;
@@ -688,6 +689,26 @@ public class Simulator {
         connectionController.init(port);
     }
 
+    /**
+     * Fixed agent teams for the team heatmap modes (from exp_fastpi): take the first ungrouped agent and its
+     * teamSize-1 nearest ungrouped agents, repeat until every agent is in a team.
+     */
+    private void formAgentTeams(int teamSize) {
+        List<Agent> ungrouped = new ArrayList<>(state.getAgents());
+        while (!ungrouped.isEmpty()) {
+            Agent first = ungrouped.remove(0);
+            List<Agent> team = new ArrayList<>(ungrouped.stream()
+                    .sorted(Comparator.comparingDouble(a -> first.getCoordinate().getDistance(a.getCoordinate())))
+                    .limit(teamSize - 1)
+                    .toList());
+            team.add(first);
+            ungrouped.removeAll(team);
+            List<String> ids = team.stream().map(Agent::getId).toList();
+            for (Agent a : team) a.setAgentTeam(new ArrayList<>(ids));
+            LOGGER.info(String.format("%s; TEAM; Formed agent team (ids); %s", state.getTime(), String.join(",", ids)));
+        }
+    }
+
     private boolean loadScenarioFromFile(String scenarioFile) {
         try {
             String json = GsonUtils.readFile(scenarioFile);
@@ -722,6 +743,14 @@ public class Simulator {
             this.state.setGameDescription(GsonUtils.getValue(obj, "gameDescription"));
             Object centre = GsonUtils.getValue(obj, "gameCentre");
             this.state.setGameCentre(new Coordinate(GsonUtils.getValue(centre, "lat"), GsonUtils.getValue(centre, "lng")));
+
+            // Heatmap allocation interface: "dynamic" (original, the default), "teams" (exp_fastpi) or "lens"
+            Object heatmapUI = GsonUtils.getValue(obj, "heatmapUI");
+            if (heatmapUI instanceof String h && Arrays.asList("dynamic", "teams", "lens").contains(h)) {
+                state.setHeatmapUI(h);
+            } else if (heatmapUI != null) {
+                LOGGER.warning("Unknown heatmapUI '" + heatmapUI + "' in scenario file; using 'dynamic'.");
+            }
 
             Object dynamicUIFeaturesJson = GsonUtils.getValue(obj, "dynamicUIFeatures");
             if (dynamicUIFeaturesJson != null) {
@@ -973,6 +1002,12 @@ public class Simulator {
                         agent.setMarker(GsonUtils.getValue(agentJSon, "mkr"));
                     }
                 }
+            }
+
+            if (state.isTeamHeatmapUI()) {
+                int teamSize = 3;
+                if (GsonUtils.getValue(obj, "heatmapTeamSize") instanceof Double d) teamSize = Math.max(1, d.intValue());
+                formAgentTeams(teamSize);
             }
 
             Object hub = GsonUtils.getValue(obj, "hub");

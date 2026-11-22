@@ -62,6 +62,7 @@ var MapTaskController = {
         }
     },
     heatmapTaskUpdateGeneric: function (task) {
+        if (!HeatmapUI.isDynamic()) return HeatmapUI.tasksChanged(task);
         MapTaskHeatmapController.removeTaskMarkerForTask(task)
         MapTaskHeatmapController.drawTaskMaps();
     },
@@ -226,7 +227,9 @@ var MapTaskController = {
         }
     },
     onTaskChange: function (task) {
-        if (MapController.isHeatmapMode()) {
+        if (MapController.isHeatmapMode() && !HeatmapUI.isDynamic()) {
+            HeatmapUI.taskChanged(task);
+        } else if (MapController.isHeatmapMode()) {
             MapTaskController.heatmapTaskUpdateGeneric(task);
         } else {
             var marker = this.$el.gmap("get", "markers")[task.getId()];
@@ -238,7 +241,9 @@ var MapTaskController = {
     onTaskRemove: function (task) {
         // TODO on remove, make heatmap markers clear
         MapTaskHeatmapController.updateFor(task);
-        if (MapController.isHeatmapMode()) {
+        if (MapController.isHeatmapMode() && !HeatmapUI.isDynamic()) {
+            HeatmapUI.taskRemoved(task);
+        } else if (MapController.isHeatmapMode()) {
             MapAgentHeatmapController.removeAgentMarkerForAgentWithTask(task)
             MapAgentController.heatmapAgentUpdateGeneric();
             MapTaskController.heatmapTaskUpdateGeneric();
@@ -369,6 +374,7 @@ var MapTaskController = {
                 }
             });
             MapTaskHeatmapController.clearAll();
+            HeatmapUI.clearAll("tasks");
             MapTaskController.clearAll();
         }
 

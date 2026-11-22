@@ -15,6 +15,9 @@ Usage: python3 tools/record_replay.py --file PFM_SFV.json --id pfm-live --second
 --operator targets: a scripted operator adds a waypoint task on every target (or a ring of waypoints around the map
 centre when the scenario has no targets) two seconds in, then runs auto-allocation and confirms it, and repeats the
 allocation every --allocate-every seconds. PFM missions allocate themselves and need no operator.
+
+--operator teams: for the team heatmaps (heatmapUI "teams" or "lens"), every --allocate-every seconds each team with
+nothing to do is sent to the nearest mission (spawn batch) that no team is on, the way an operator drags it there.
 """
 import argparse, gzip, json, math, os, time, urllib.parse, urllib.request
 
@@ -57,6 +60,38 @@ def allocate():
     post("/allocation/confirm")
 
 
+def send_idle_teams(s):
+    """Scripted operator for the team heatmaps: send each idle team to the nearest uncovered mission."""
+    alloc = s.get("allocation") or {}
+    teams = {}
+    for ag in s.get("agents") or []:
+        if ag.get("hub"):
+            continue
+        key = ",".join(sorted(ag.get("agentTeam") or [ag["id"]]))
+        teams.setdefault(key, []).append(ag)
+    missions = {}
+    for t in s.get("tasks") or []:
+        g = t.get("taskGroup", -1)
+        if g is not None and g >= 0:
+            missions.setdefault(g, []).append(t)
+    covered = {next((t["taskGroup"] for t in s["tasks"] if t["id"] == tid), None) for tid in alloc.values()}
+    for key, ags in teams.items():
+        if any(a["id"] in alloc or a.get("taskQueue") for a in ags):
+            continue
+        lat = sum(a["coordinate"]["latitude"] for a in ags) / len(ags)
+        lng = sum(a["coordinate"]["longitude"] for a in ags) / len(ags)
+        free = [g for g in missions if g not in covered]
+        if not free:
+            return
+        g = min(free, key=lambda g: sum((t["coordinate"]["latitude"] - lat) ** 2 + (t["coordinate"]["longitude"] - lng) ** 2 for t in missions[g]))
+        ids = ",".join(a["id"] for a in ags)
+        if s.get("heatmapUI") == "lens":
+            post("/allocation/teamAllocate", {"agentIds": ids, "taskGroup": g})
+        else:  # the 2024 team heatmap's drag
+            post("/allocation/groupAllocate", {"agentIds": ids, "taskGroupIndex": g})
+        covered.add(g)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--file", required=True, help="scenario file in server/web/scenarios")
@@ -65,7 +100,7 @@ def main():
     ap.add_argument("--seconds", type=float, default=120, help="simulated seconds to record")
     ap.add_argument("--hz", type=float, default=4, help="frames per simulated second")
     ap.add_argument("--speed", type=float, default=1, help="simulation speed while recording")
-    ap.add_argument("--operator", choices=["none", "targets"], default="none")
+    ap.add_argument("--operator", choices=["none", "targets", "teams"], default="none")
     ap.add_argument("--allocate-every", type=float, default=15)
     ap.add_argument("--out", default="server/web/replays")
     a = ap.parse_args()
@@ -78,7 +113,7 @@ def main():
     first = {k: v for k, v in state().items() if k not in DROP}  # before start: shows the briefing panel
     post("/mode/scenario/start")
 
-    next_alloc = 2.0 if a.operator == "targets" else float("inf")
+    next_alloc = 2.0 if a.operator in ("targets", "teams") else float("inf")
     placed = False
     last_sent = {}
     frames = [{"t": 0, "d": first}]
@@ -89,7 +124,10 @@ def main():
         t = s.get("time", 0)
         if t + 1 < frames[-1]["t"]:
             break  # the scenario hit its own time limit and the server reset it
-        if t >= next_alloc:
+        if t >= next_alloc and a.operator == "teams":
+            send_idle_teams(s)
+            next_alloc = t + min(a.allocate_every, 5)
+        elif t >= next_alloc:
             if not placed:
                 for lat, lng in operator_tasks(s):
                     try:

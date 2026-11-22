@@ -65,7 +65,7 @@ Each tile on the launch page opens a scenario that shows one research feature. T
 | **Operator lenses** | Switchable overlays: position uncertainty, communication range, path prediction, explored area and hazards. | `AllUITest.json` | Soorati, Naiseh, Hunt et al., book chapter 2024 |
 | **Scan review and triage** | Drones scan the area, the operator triages each find as high, medium or low priority, and ground vehicles respond in that order. | `usecase.json` | Soorati, Naiseh, Hunt et al., book chapter 2024 |
 | **Drone programmer** | Agents run their own programmed policies. Under limited communication the operator only sees what is relayed to the hub. | `ProggedNoCom.json`, `ProggedWithCom.json` | Soorati, Naiseh, Hunt et al., book chapter 2024 |
-| **Adaptive abstraction** | A high-workload mission drawn as heatmaps of agent and task clusters. Drag one cluster onto another to assign them. | `CurrentNonFixed/DynamicTaskingShiftHeatmap.json` | Abioye, Landowska, Hunt et al., arXiv 2024 |
+| **Adaptive abstraction** | A high-workload mission drawn as heatmaps of agent teams and missions. Drag a team onto a mission to send it there; the allocation lens shows which team covers which task. | `Heatmap/AllocationLens.json` (also the 2024 and original study versions) | Abioye, Landowska, Hunt et al., arXiv 2024 |
 | **Sandbox** | An empty map. Add agents, tasks and allocations by hand. | (none) | |
 
 Two switches apply everywhere:

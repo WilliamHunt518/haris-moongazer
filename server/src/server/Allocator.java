@@ -1350,6 +1350,108 @@ public class Allocator {
         new ArrayList<>(result.keySet());
     }
 
+    // ---- Allocation lens (heatmapUI "lens") ----
+
+    /** Previous task and queue of each agent moved by assignTeamToTaskGroup, newest last, for undo. */
+    private final Deque<Map<String, List<String>>> teamAllocationUndo = new ArrayDeque<>();
+
+    private static void clearQueue(Agent agent) {
+        agent.getQueuedTasks().clear();
+        if (agent instanceof AgentVirtual av) av.clearCoordQueue();
+    }
+
+    private static void queueTask(Agent agent, Task task) {
+        if (agent instanceof AgentVirtual av) av.addTaskToQueue(task);
+        else agent.getQueuedTasks().add(task);
+    }
+
+    /**
+     * Send a team to a mission (a task group, or any list of tasks; an empty list releases the team). The team first takes the group's tasks that no other agent covers (nearest pair
+     * first). Tasks it can't cover yet are queued on its nearest drone; drones with nothing to do help on their
+     * nearest task. The change is confirmed immediately, and can be undone with undoTeamAllocation().
+     */
+    public synchronized void assignTeamToTasks(List<Agent> team, List<Task> tasks, String label) {
+        Map<String, String> temp = new HashMap<>(simulator.getState().getAllocation());
+        Map<String, List<String>> before = new LinkedHashMap<>();
+        Set<String> teamIds = new HashSet<>();
+        for (Agent a : team) {
+            List<String> prev = new ArrayList<>();
+            prev.add(temp.getOrDefault(a.getId(), ""));
+            a.getQueuedTasks().stream().filter(Objects::nonNull).forEach(t -> prev.add(t.getId()));
+            before.put(a.getId(), prev);
+            teamIds.add(a.getId());
+            temp.remove(a.getId());
+            clearQueue(a);
+        }
+        simulator.getState().setTempAllocation(temp);
+
+        // Free slots: tasks still needing agents once other teams' agents are counted
+        List<Task> slots = new ArrayList<>();
+        for (Task t : tasks) {
+            long others = temp.entrySet().stream().filter(e -> e.getValue().equals(t.getId()) && !teamIds.contains(e.getKey())).count();
+            for (long i = others; i < Math.max(1, t.getGroup()); i++) slots.add(t);
+        }
+        List<Agent> pool = new ArrayList<>(team);
+        List<String> pairs = new ArrayList<>();
+        while (!slots.isEmpty() && !pool.isEmpty()) {
+            Agent bestA = null; Task bestT = null; double best = Double.MAX_VALUE;
+            for (Agent a : pool) for (Task t : slots) {
+                double d = a.getCoordinate().getDistance(t.getCoordinate());
+                if (d < best) { best = d; bestA = a; bestT = t; }
+            }
+            putInTempAllocation(bestA.getId(), bestT.getId(), false);
+            pairs.add(bestA.getId() + "=" + bestT.getId());
+            pool.remove(bestA);
+            slots.remove(bestT);
+        }
+        // More tasks than drones: queue the rest on the nearest drone of the team
+        for (Task t : new LinkedHashSet<>(slots)) {
+            team.stream().min(Comparator.comparingDouble(a -> a.getCoordinate().getDistance(t.getCoordinate())))
+                    .ifPresent(a -> { queueTask(a, t); pairs.add(a.getId() + "+" + t.getId()); });
+        }
+        // More drones than tasks: spare drones help, on the least-helped task first, then the nearest
+        for (Agent a : pool) {
+            Map<String, String> now = simulator.getState().getTempAllocation();
+            tasks.stream().min(Comparator.<Task>comparingLong(t -> now.values().stream().filter(v -> v.equals(t.getId())).count())
+                            .thenComparingDouble(t -> a.getCoordinate().getDistance(t.getCoordinate())))
+                    .ifPresent(t -> { putInTempAllocation(a.getId(), t.getId(), false); pairs.add(a.getId() + "=" + t.getId()); });
+        }
+        confirmAllocation(simulator.getState().getTempAllocation());
+        teamAllocationUndo.addLast(before);
+        while (teamAllocationUndo.size() > 20) teamAllocationUndo.removeFirst();
+        LOGGER.info(String.format("%s; TMAL; Team sent to mission (agents, mission, pairs); %s; %s; %s",
+                simulator.getState().getTime(), String.join(",", teamIds), label, String.join(",", pairs)));
+    }
+
+    /** Undo the latest assignTeamToTaskGroup: the moved agents go back to their previous task and queue. */
+    public synchronized boolean undoTeamAllocation() {
+        Map<String, List<String>> before = teamAllocationUndo.pollLast();
+        if (before == null) return false;
+        Map<String, String> temp = new HashMap<>(simulator.getState().getAllocation());
+        simulator.getState().setTempAllocation(temp);
+        for (Map.Entry<String, List<String>> e : before.entrySet()) {
+            Agent a = simulator.getState().getAgent(e.getKey());
+            if (a == null) continue;
+            temp.remove(a.getId());
+            clearQueue(a);
+            List<String> prev = e.getValue();
+            Task t = prev.get(0).isEmpty() ? null : simulator.getState().getTask(prev.get(0));
+            if (t != null) putInTempAllocation(a.getId(), t.getId(), false);
+            for (String q : prev.subList(1, prev.size())) {
+                Task qt = simulator.getState().getTask(q);
+                if (qt != null) queueTask(a, qt);
+            }
+        }
+        confirmAllocation(simulator.getState().getTempAllocation());
+        LOGGER.info(String.format("%s; TMUN; Undid team allocation (agents); %s",
+                simulator.getState().getTime(), String.join(",", before.keySet())));
+        return true;
+    }
+
+    public void clearTeamAllocationUndo() {
+        teamAllocationUndo.clear();
+    }
+
     /**
      * Resets log to a new filename
      * @param fileHandler

@@ -468,6 +468,11 @@ public abstract class Agent extends MObject implements Serializable {
         this.visible = visible;
     }
 
+    /** Tasks this agent will take on after its current one (used by the team heatmap modes). */
+    public List<Task> getQueuedTasks() {
+        return taskQueue;
+    }
+
     public List<String> getAgentTeam() {
         return agentTeam;
     }

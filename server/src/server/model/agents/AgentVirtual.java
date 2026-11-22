@@ -474,6 +474,10 @@ public class AgentVirtual extends Agent {
         return null;
     }
 
+    public void clearCoordQueue() {
+        coordQueue.clear();
+    }
+
     public List<Task> getTaskQueue() {
         return taskQueue;
     }

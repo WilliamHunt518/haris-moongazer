@@ -34,6 +34,12 @@ public class AllocationHandler extends RestHandler {
             case "groupAllocate":
                 handleGroupAllocate(req, resp);
                 break;
+            case "teamAllocate":
+                handleTeamAllocate(req, resp);
+                break;
+            case "restore":
+                handleRestore(req, resp);
+                break;
             case "undo":
                 handleUndo(resp);
                 break;
@@ -87,9 +93,14 @@ public class AllocationHandler extends RestHandler {
         resp.sendOkay();
     }
 
+    /**
+     * Assign a group of agents to a group of tasks (the heatmap drag). Takes agentIds plus either taskIds
+     * (original heatmap) or taskGroupIndex (exp_fastpi team heatmap: every task in that spawn batch).
+     */
     private void handleGroupAllocate(Request req, Response resp) throws IOException {
         Map<String, String> params = req.getParams();
-        List<String> expectedKeys = Arrays.asList("agentIds", "taskIds");
+        boolean byGroup = params.containsKey("taskGroupIndex");
+        List<String> expectedKeys = byGroup ? Arrays.asList("agentIds", "taskGroupIndex") : Arrays.asList("agentIds", "taskIds");
 
         if (!checkParams(params, expectedKeys, resp))
             return;
@@ -98,7 +109,12 @@ public class AllocationHandler extends RestHandler {
         Arrays.stream(params.get("agentIds").split(",")).forEach(a -> agentIdsAsArray.add(Simulator.instance.getState().getAgent(a)));
 
         List<Task> taskIdsAsArray = new ArrayList<>();
-        Arrays.stream(params.get("taskIds").split(",")).forEach(t -> taskIdsAsArray.add(Simulator.instance.getState().getTask(t)));
+        if (byGroup) {
+            int taskGroup = Integer.parseInt(params.get("taskGroupIndex"));
+            simulator.getState().getTasks().stream().filter(t -> t.getTaskGroup() == taskGroup).forEach(taskIdsAsArray::add);
+        } else {
+            Arrays.stream(params.get("taskIds").split(",")).forEach(t -> taskIdsAsArray.add(Simulator.instance.getState().getTask(t)));
+        }
 
         simulator.getAllocator().dynamicRandomAssignSubgroup(agentIdsAsArray, taskIdsAsArray);
         simulator.getAllocator().confirmAllocation(simulator.getState().getTempAllocation());
@@ -106,6 +122,43 @@ public class AllocationHandler extends RestHandler {
         resp.sendOkay();
     }
 
+    /**
+     * Allocation lens: send a team to a mission, given as taskGroup (spawn batch) or taskIds; neither releases it. The team fills the mission's uncovered tasks,
+     * queues any it can't cover yet, and spare drones help on the nearest task. Applied immediately.
+     */
+    private void handleTeamAllocate(Request req, Response resp) throws IOException {
+        Map<String, String> params = req.getParams();
+        if (!checkParams(params, Collections.singletonList("agentIds"), resp))
+            return;
+        List<Agent> team = new ArrayList<>();
+        for (String id : params.get("agentIds").split(",")) {
+            Agent a = simulator.getState().getAgent(id);
+            if (a != null) team.add(a);
+        }
+        List<Task> tasks = new ArrayList<>();
+        String label;
+        if (params.containsKey("taskGroup")) {
+            int taskGroup = Integer.parseInt(params.get("taskGroup"));
+            simulator.getState().getTasks().stream().filter(t -> t.getTaskGroup() == taskGroup).forEach(tasks::add);
+            label = "group " + taskGroup;
+        } else if (params.containsKey("taskIds")) {
+            for (String id : params.get("taskIds").split(",")) {
+                Task t = simulator.getState().getTask(id);
+                if (t != null) tasks.add(t);
+            }
+            label = "tasks " + params.get("taskIds");
+        } else {
+            label = "none (released)";
+        }
+        simulator.getAllocator().assignTeamToTasks(team, tasks, label);
+        resp.sendOkay();
+    }
+
+    /** Allocation lens undo: puts the drones moved by the latest teamAllocate back where they were. */
+    private void handleRestore(Request req, Response resp) throws IOException {
+        simulator.getAllocator().undoTeamAllocation();
+        resp.sendOkay();
+    }
 
     private void handleUndo(Response resp) throws IOException {
         simulator.getAllocator().undoAllocationChange();

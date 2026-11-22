@@ -103,6 +103,8 @@ public class State {
     private boolean pfmMission = false;
     // Reproduce the study-era engine's agent speed and battery per real second (see Agent.LEGACY_*)
     private boolean legacyStudyPhysics = false;
+    // Which heatmap allocation interface a scenario uses: "dynamic" (original), "teams" (exp_fastpi) or "lens"
+    private String heatmapUI = "dynamic";
     private double missionBoundedSuccessChance;
     private double missionBoundedSuccessUnderChance;
     private double missionBoundedSuccessOverChance;
@@ -1108,6 +1110,11 @@ public class State {
     public void setLegacyStudyPhysics(boolean legacyStudyPhysics) { this.legacyStudyPhysics = legacyStudyPhysics; }
     public void setPfmMission(boolean pfmMission) { this.pfmMission = pfmMission; }
 
+    public String getHeatmapUI() { return heatmapUI; }
+    public void setHeatmapUI(String heatmapUI) { this.heatmapUI = heatmapUI; }
+    /** True for the heatmap modes built on fixed agent teams and spawn-batch task groups. */
+    public boolean isTeamHeatmapUI() { return "teams".equals(heatmapUI) || "lens".equals(heatmapUI); }
+
     public void resetPfm() {
         estimatedCompletionTime = -1;
         estimatedCompletionUnderTime = -1;
@@ -1116,5 +1123,6 @@ public class State {
         tempCanAddRemAgents = 0;
         pfmMission = false;
         legacyStudyPhysics = false;
+        heatmapUI = "dynamic";
     }
 }

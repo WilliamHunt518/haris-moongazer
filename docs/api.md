@@ -72,7 +72,9 @@ These change the temporary allocation, except `confirm`, which makes it the main
 |---|---|---|---|
 | POST | `/allocation/auto-allocate` | | Run the scenario's planner and put its result in the temporary allocation. |
 | POST | `/allocation/allocate` | `agentId`, `taskId` | Assign one agent to one task. |
-| POST | `/allocation/groupAllocate` | `agentIds`, `taskIds` | Assign a group of agents to a group of tasks (comma-separated ids). Used by the heatmap interface. |
+| POST | `/allocation/groupAllocate` | `agentIds`, and `taskIds` or `taskGroupIndex` | Assign a group of agents to a group of tasks (comma-separated ids), or to every task in a spawn batch, and confirm. Used by the `dynamic` and `teams` heatmaps. |
+| POST | `/allocation/teamAllocate` | `agentIds`, and `taskGroup` or `taskIds` | Allocation lens: send a team to a mission and confirm at once (see `heatmapUI` in the scenario reference). With neither, the team is released. Logged as `TMAL`. |
+| POST | `/allocation/restore` | | Allocation lens: undo the latest `teamAllocate`, putting those drones back on their previous tasks and queues. Logged as `TMUN`. |
 | POST | `/allocation/confirm` | | Make the temporary allocation the main allocation. Agents set off. |
 | POST | `/allocation/undo` | | Undo the last change to the temporary allocation. |
 | POST | `/allocation/redo` | | Redo it. |

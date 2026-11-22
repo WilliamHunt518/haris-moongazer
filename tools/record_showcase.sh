@@ -18,6 +18,8 @@ usecase.json|triage|180|targets|4
 ProggedNoCom.json|programmer-limited-comms|150|targets|4
 ProggedWithCom.json|programmer-full-comms|150|targets|4
 CurrentNonFixed/DynamicTaskingShiftHeatmap.json|heatmap|58|targets|2
+Heatmap/AllocationLens.json|heatmap-lens|180|teams|4
+Heatmap/FixedTeams.json|heatmap-teams|180|teams|4
 LIST
 python3 - "$OUT" <<'PY'
 import glob, gzip, json, os, sys
