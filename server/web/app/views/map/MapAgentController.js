@@ -94,9 +94,11 @@ var MapAgentController = {
         });
     },
     heatmapAgentUpdateGeneric: function (reset) {
+        if (!HeatmapUI.isDynamic()) return HeatmapUI.agentsChanged();
         MapAgentHeatmapController.drawAgentMaps(reset);
     },
     forceRedrawMaps: function () {
+        if (!HeatmapUI.isDynamic()) return HeatmapUI.agentsChanged();
         this.state.agents.forEach((a) => {
             MapAgentHeatmapController.drawAgentMaps(false);
             MapAgentHeatmapController.adjustHeatmapLocation(a)
@@ -173,7 +175,7 @@ var MapAgentController = {
             MapAgentController.updateAgentMarkerIcon(agent);
         this.updateTable();
         MapTargetController.checkForReveal(agent);
-        if (MapController.isHeatmapMode()) {
+        if (MapController.isHeatmapMode() && HeatmapUI.isDynamic()) {
             MapAgentHeatmapController.updateAllAgentMarkers();
             MapAgentHeatmapController.adjustHeatmapLocation(agent);
         }
@@ -428,6 +430,7 @@ var MapAgentController = {
                 }
             });
             MapAgentHeatmapController.clearAll();
+            HeatmapUI.clearAll("agents");
             self.clearAllocationRendering()
         }
         if (MapController.isHeatmapMode()) {

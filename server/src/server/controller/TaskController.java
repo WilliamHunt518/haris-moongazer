@@ -28,6 +28,14 @@ public class TaskController extends AbstractController {
     }
 
     public synchronized Task createTask(int taskType, double lat, double lng) {
+        return createTask(taskType, lat, lng, -1);
+    }
+
+    /**
+     * Create a task that belongs to a spawn batch (a "mission" in the heatmap views).
+     * The group is set before the task is added to the state, so clients never see it without one.
+     */
+    public synchronized Task createTask(int taskType, double lat, double lng, int taskGroup) {
         synchronized (simulator.getState().getTasks()) {
             String id = generateUID();
             Task task;
@@ -54,6 +62,7 @@ public class TaskController extends AbstractController {
                 default:
                     throw new IllegalArgumentException("Unable to create task of type " + taskType);
             }
+            task.setTaskGroup(taskGroup);
             simulator.getState().add(task);
 
             if (task instanceof DeepScanTask) {

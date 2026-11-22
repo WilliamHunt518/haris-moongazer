@@ -229,6 +229,9 @@ App.Models.State  = Backbone.Model.extend({
         }
         $.post("/changeview", {edit: modeFlag});
     },
+    getHeatmapUI: function () {
+        return this.get("heatmapUI");
+    },
     getDynamicUIFeatures: function () {
         return this.get("dynamicUIFeatures");
     },

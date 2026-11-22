@@ -341,6 +341,8 @@ var MapController = {
 
         this.drawMarkers();
         this.clearHandledTargetMarkers();
+        if (MapController.isHeatmapMode() && !HeatmapUI.isDynamic())
+            HeatmapUI.tick();
 
         MapHazardController.updateHeatmap(-1);
         MapHazardController.updateHeatmap(0);

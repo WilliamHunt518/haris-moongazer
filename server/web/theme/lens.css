@@ -1,0 +1,78 @@
+/* Allocation lens (heatmapUI "lens"): badges, pips and the allocation board drawn over the map.
+   Not tied to the look switch: the lens only runs in the modern look (Classic falls back to the team heatmap). */
+.lens-layer { position: absolute; left: 0; top: 0; font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; }
+.lens-layer > div { position: absolute; left: 0; top: 0; width: 0; height: 0; }
+
+/* Task pip at each task's position */
+.lens-task::before { content: ""; position: absolute; width: 12px; height: 12px; left: -6px; top: -6px; border-radius: 3px;
+    background: var(--lens-team); border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.25); }
+.lens-task.is-free::before { background: rgba(255,255,255,.85); border: 2px dashed #c86f00; box-shadow: none; }
+.lens-task.is-queued::before { background: repeating-linear-gradient(45deg, var(--lens-team) 0 3px, #fff 3px 6px); }
+
+/* Mission badge, sitting just above its zone */
+.lens-mission > * { pointer-events: auto; }
+.lens-mission { z-index: 3; }
+.lens-mission::after { content: ""; }
+.lens-mission .lens-mission-name, .lens-mission .lens-pips { position: absolute; left: 0; transform: translateX(-50%); white-space: nowrap; }
+.lens-mission .lens-mission-name { top: -44px; font: 600 13px/1 "Segoe UI", system-ui, sans-serif; color: #133d5b; background: #fff;
+    padding: 5px 9px 18px; border: 1.5px solid #133d5b; border-radius: 8px; box-shadow: 0 2px 8px rgba(13,42,64,.18); min-width: 38px; text-align: center; }
+.lens-mission .lens-pips { top: -22px; }
+.lens-mission.is-target .lens-mission-name { border-color: #26759e; box-shadow: 0 0 0 3px rgba(38,117,158,.3); }
+.lens-mission.is-dim { opacity: .45; }
+
+.lens-pips { display: inline-flex; gap: 3px; }
+.lens-pip { width: 10px; height: 8px; border-radius: 2px; background: var(--lens-team); border: 1.5px solid var(--lens-team); box-sizing: border-box; }
+.lens-pip.is-free { background: transparent; border: 1.5px dashed #c86f00; }
+.lens-pip.is-queued { background: repeating-linear-gradient(45deg, var(--lens-team) 0 2px, #fff 2px 4px); }
+
+/* Team badge at the team's centre */
+.lens-team { z-index: 4; }
+.lens-team .lens-team-dot { position: absolute; left: -16px; top: -16px; width: 32px; height: 32px; pointer-events: auto; cursor: grab; touch-action: none;
+    font-size: 15px; border: 2.5px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+.lens-team.is-idle .lens-team-dot { outline: 2px dashed var(--lens-team); outline-offset: 3px; }
+.lens-team .lens-team-label { position: absolute; left: 0; top: 20px; transform: translateX(-50%); white-space: nowrap; pointer-events: none;
+    font: 600 11px/1.2 "Segoe UI", system-ui, sans-serif; color: #17262f; text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff; }
+.lens-team.is-dim { opacity: .4; }
+.lens-team-dot { display: inline-grid; place-items: center; border-radius: 50%; color: #fff; font-weight: 700; box-sizing: border-box; }
+body.lens-dragging, body.lens-dragging * { cursor: grabbing !important; }
+
+/* Drone dots shown while a team or mission is focused */
+.lens-agent { z-index: 2; }
+.lens-agent::before { content: ""; position: absolute; left: -5px; top: -5px; width: 10px; height: 10px; border-radius: 50%; background: inherit; border: 2px solid #fff; box-sizing: border-box; }
+.lens-agent { background: #133d5b; }
+
+/* Drop preview */
+.lens-preview { position: absolute; z-index: 1000; pointer-events: none; max-width: 250px; background: #fff; color: #17262f;
+    border: 1px solid #a9c0c8; border-radius: 8px; padding: 7px 10px; font: 13px/1.4 "Segoe UI", system-ui, sans-serif; box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+
+/* Undo toast */
+.lens-toast { margin-top: 10px; display: flex; gap: 12px; align-items: center; background: #133d5b; color: #fff; padding: 7px 8px 7px 14px;
+    border-radius: 8px; font: 13px "Segoe UI", system-ui, sans-serif; box-shadow: 0 6px 20px rgba(0,0,0,.25); }
+.lens-toast[hidden], .lens-preview[hidden], .lens-board-body[hidden], .lens-toast button[hidden] { display: none; }
+.lens-toast button { font: 600 12px "Segoe UI", system-ui, sans-serif; color: #fff; background: transparent; border: 1px solid #fff; border-radius: 6px; padding: 3px 10px; cursor: pointer; }
+
+/* Allocation board */
+.lens-board { margin: 10px; width: 250px; max-height: calc(100% - 80px); overflow: auto; background: #fff; color: #17262f; border: 1px solid #d4dee1;
+    border-radius: 10px; box-shadow: 0 2px 4px rgba(13,42,64,.1), 0 12px 32px rgba(13,42,64,.16); font: 13px/1.4 "Segoe UI", system-ui, sans-serif; }
+.lens-board-head { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; font-weight: 600; border-bottom: 1px solid #d4dee1; }
+.lens-board-toggle { font: 12px "Segoe UI", system-ui, sans-serif; border: 1px solid #a9c0c8; background: #fff; border-radius: 6px; padding: 2px 8px; cursor: pointer; }
+.lens-board-body { padding: 8px 10px 10px; display: grid; gap: 6px; }
+.lens-h { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #5a6b76; margin-top: 4px; }
+.lens-tray { display: flex; flex-wrap: wrap; gap: 5px; min-height: 28px; padding: 5px; border: 1px dashed #a9c0c8; border-radius: 8px; }
+.lens-tray.is-target { border-color: #26759e; background: rgba(38,117,158,.08); }
+.lens-empty { color: #5a6b76; font-size: 12px; }
+.lens-cards { display: grid; gap: 6px; }
+.lens-card { border: 1px solid #d4dee1; border-radius: 8px; padding: 6px 8px; display: grid; gap: 5px; }
+.lens-card.is-target { border-color: #26759e; background: rgba(38,117,158,.08); }
+.lens-card.is-focus { border-color: #a9c0c8; }
+.lens-card-head { display: flex; justify-content: space-between; gap: 6px; align-items: center; }
+.lens-card-name { font-weight: 600; }
+.lens-status { font-size: 11px; padding: 0 7px; border-radius: 99px; border: 1px solid; white-space: nowrap; }
+.lens-status-ok { color: #2f7d10; }
+.lens-status-part { color: #c86f00; }
+.lens-status-none { color: #a35400; background: rgba(200,111,0,.12); }
+.lens-card-teams { display: flex; flex-wrap: wrap; gap: 4px; }
+.lens-card-teams:empty { display: none; }
+.lens-chip { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px 2px 3px; border: 1px solid #a9c0c8; border-radius: 99px; background: #fff;
+    cursor: grab; touch-action: none; user-select: none; font-size: 12px; }
+.lens-chip .lens-team-dot { width: 18px; height: 18px; font-size: 11px; }

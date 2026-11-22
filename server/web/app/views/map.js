@@ -42,6 +42,10 @@ App.Views.Map = Backbone.View.extend({
         MapAgentController.bind(this);
         MapTaskHeatmapController.bind(this);
         MapAgentHeatmapController.bind(this);
+        MapTeamTaskHeatmapController.bind(this);
+        MapTeamHeatmapController.bind(this);
+        MapLensController.bind(this);
+        HeatmapUI.bind(this);
         MapTaskController.bind(this);
         MapHazardController.bind(this);
         MapTargetController.bind(this);
@@ -653,7 +657,9 @@ App.Views.Map = Backbone.View.extend({
     },
     updateAllocationRendering: function () {
         // TODO fix (restore) the allocation renderings here
-        if (MapController.isHeatmapMode()) {
+        if (MapController.isHeatmapMode() && !HeatmapUI.isDynamic()) {
+            HeatmapUI.allocationChanged();
+        } else if (MapController.isHeatmapMode()) {
             MapTaskController.heatmapTaskUpdateGeneric();
             MapAgentHeatmapController.updateHeatmapAllocationRendering()
         } else {

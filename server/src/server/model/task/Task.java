@@ -49,6 +49,8 @@ public abstract class Task extends MObject implements Serializable {
     // Not on client but used on server
     protected transient int status;
     protected transient double startTime;
+    // Spawn batch ("mission") this task belongs to; -1 when it was not spawned as part of a batch
+    private int taskGroup = -1;
 
     public Task(String id, int type, Coordinate coordinate) {
         super(id, coordinate);
@@ -216,6 +218,14 @@ public abstract class Task extends MObject implements Serializable {
         return this.type;
     }
 
+    public int getTaskGroup() {
+        return taskGroup;
+    }
+
+    public void setTaskGroup(int taskGroup) {
+        this.taskGroup = taskGroup;
+    }
+
     public JsonObject serialize(JsonSerializationContext context) {
         JsonObject jsonObj = new JsonObject();
 
@@ -231,6 +241,7 @@ public abstract class Task extends MObject implements Serializable {
         jsonObj.add("coordinate", context.serialize(getCoordinate()));
         jsonObj.add("id", context.serialize(getId()));
         jsonObj.add("type", context.serialize(getType()));
+        jsonObj.add("taskGroup", context.serialize(getTaskGroup()));
 
         return jsonObj;
     }
