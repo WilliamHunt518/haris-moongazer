@@ -87,7 +87,7 @@ The server holds **one mission at a time**, shared by every browser that connect
 | [Architecture](docs/architecture.md) | How the server, the browser client, allocation, the drone programmer and PFM fit together |
 | [REST API](docs/api.md) | Every HTTP endpoint the server exposes |
 | [Contributing](CONTRIBUTING.md) | Branches, building, CI, and the rules for new features |
-| [Legacy documentation](docs/legacy/README.md) | The original HutSim / DJI Hut documents, kept for reference |
+| [For later: real drones and manual control](docs/legacy/real-drones.md) | The inherited real-drone and manual-control code, not currently maintained |
 
 ## Repository layout
 

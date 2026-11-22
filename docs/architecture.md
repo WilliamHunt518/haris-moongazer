@@ -111,7 +111,7 @@ All agents extend `server.model.agents.Agent`.
 | `AgentHub`, `AgentHubProgrammed` | The base station. The programmed hub relays tasks and information to programmed agents. |
 | `AgentCommunicating` | A virtual agent that also exchanges messages like a programmed one, so manual and programmed agents can work together. |
 | `AgentGhost` | Where the hub believes an agent to be, under communication limits. This is what the operator sees. |
-| `AgentReal` | A real drone connected through the legacy Android controller. Not used in Moongazer. |
+| `AgentReal` | A real drone connected through the legacy Android controller. Not used in Moongazer; see [real drones and manual control](legacy/real-drones.md). |
 
 ## The drone programmer
 
@@ -209,4 +209,4 @@ Some parts of the repository come from HutSim and are kept but not maintained:
 | `server/src/server/Modeller.java` | The earlier success-chance predictor based on precomputed tables |
 | `server/Testing/` | An old Selenium web test |
 | `server/web/scenarios/unusued/`, `Testing/` | Scenarios from past experiments and development |
-| [`docs/legacy/`](legacy/README.md) | The original HutSim and early HARIS documentation |
+| [`docs/legacy/real-drones.md`](legacy/real-drones.md) | What is known about the real-drone and manual-control code, for later |

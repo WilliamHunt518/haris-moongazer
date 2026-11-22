@@ -8,6 +8,6 @@
 | [Architecture](architecture.md) | Server, simulation loop, allocation, agents, the drone programmer, predictive fleet management, browser client |
 | [REST API](api.md) | Every HTTP endpoint |
 | [Contributing](../CONTRIBUTING.md) | Branches, CI, and the rules for changes |
-| [Legacy documentation](legacy/README.md) | The original HutSim and early HARIS documents |
+| [For later: real drones and manual control](legacy/real-drones.md) | The inherited Android app and manual-control code, not currently maintained |
 
 Back to the [project README](../README.md).

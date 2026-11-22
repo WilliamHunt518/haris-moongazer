@@ -25,4 +25,4 @@ For PRISM (live predictions in predictive fleet management), set `PRISM_HOME` to
 
 Logs are written to this folder: `Simulator.*.log` for each run, and `<participant>-<gameId>.log` for registered participants.
 
-Full documentation: [getting started](../docs/getting-started.md), [architecture](../docs/architecture.md), [REST API](../docs/api.md). The previous version of this README, from the HutSim days, is in [docs/legacy](../docs/legacy/server-README.md).
+Full documentation: [getting started](../docs/getting-started.md), [architecture](../docs/architecture.md), [REST API](../docs/api.md).

@@ -99,7 +99,7 @@ These change the temporary allocation, except `confirm`, which makes it the main
 
 ## Legacy
 
-These remain from HutSim and the real-drone link. They are kept working but are not used by the Moongazer interface.
+These remain from HutSim and the real-drone link. They are kept but are not used by the Moongazer interface. See [real drones and manual control](legacy/real-drones.md).
 
 | Method | Path | Params | Description |
 |---|---|---|---|
