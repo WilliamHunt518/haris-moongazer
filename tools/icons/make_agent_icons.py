@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Generate the modern-look agent marker SVGs (top-down quadrotor, fixed wing, UGV, hub).
 
+They follow the classic icons' style: one colour per state, shaded from near-white at the
+front to the full colour at the back, with a dark outline in the same hue.
+
 Writes server/web/icons/modern/src/*.svg. Then run render_agent_icons.js to rasterise them to
 60x60 PNGs in server/web/icons/modern/ (the same size and anchor as the classic icons/used/*.png).
 All icons point north (heading 0); the map rotates the <img> by the agent's heading.
@@ -9,107 +12,103 @@ import os
 
 OUT = os.path.join(os.path.dirname(__file__), "..", "..", "server", "web", "icons", "modern", "src")
 
-NAVY, NAVY_900, BLUE, BLUE_300 = "#133d5b", "#0d2a40", "#26759e", "#3093c7"
-ORANGE, RED, GREY = "#e78404", "#a32020", "#6b7780"
-
-# Degradation-study team colours (marker "UAV-<colour>")
+# (front tint, back colour, outline), sampled from the classic icons in icons/used/
+UAV = ("#f1f6ff", "#1c4bfa", "#161a2e")
+SELECTED = ("#ffe3f3", "#ff49f6", "#ff1d33")
+MANUAL = ("#f8f1f3", "#f91b1b", "#2c1515")
+TIMED_OUT = ("#515151", "#1a1a1a", "#090909")
+MINI = ("#ffffff", "#e6e6e6", "#111111")
 TEAM = {
-    "blue": "#2f6fdf", "cyan": "#13a6c6", "green": "#2f9e33", "orange": "#f08a00",
-    "pink": "#e0529c", "purple": "#8a4fd0", "red": "#d63a3a", "yellow": "#e3bb12",
+    "blue": ("#f1f6ff", "#1c66fa", "#161e2e"), "cyan": ("#f1ffff", "#1cfafa", "#162e2e"),
+    "green": ("#f1fff1", "#1cfa1c", "#162e16"), "orange": ("#fff8f1", "#fa8b1c", "#2e2216"),
+    "pink": ("#fff1fc", "#fa1cc3", "#2e1628"), "purple": ("#f8f1ff", "#8b1cfa", "#22162e"),
+    "red": ("#fff1f1", "#fa1c1c", "#2e1616"), "yellow": ("#fffef1", "#fae81c", "#2e2c16"),
 }
+PACK = "#f1cb95"
 
 SHADOW = ('<filter id="s" x="-20%" y="-20%" width="140%" height="140%">'
-          '<feDropShadow dx="0" dy="1" stdDeviation="1.1" flood-color="#0d2a40" flood-opacity=".45"/></filter>')
+          '<feDropShadow dx="1" dy="1.5" stdDeviation="1" flood-color="#000" flood-opacity=".4"/></filter>')
 
 
-def svg(body, extra_defs=""):
+def svg(body, style, y0=6, y1=54):
+    top, bottom, _ = style
+    grad = (f'<linearGradient id="g" gradientUnits="userSpaceOnUse" x1="0" y1="{y0}" x2="0" y2="{y1}">'
+            f'<stop offset="0" stop-color="{top}"/><stop offset="1" stop-color="{bottom}"/></linearGradient>')
     return ('<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60">'
-            f'<defs>{SHADOW}{extra_defs}</defs><g filter="url(#s)">{body}</g></svg>\n')
+            f'<defs>{SHADOW}{grad}</defs><g filter="url(#s)">{body}</g></svg>\n')
 
 
-def quad(body=NAVY, rotor=BLUE_300, ring=BLUE, front=ORANGE, opacity=1.0, dashed=False,
-         pack=False, halo=None, scale=1.0, outline="#fff"):
-    rotors = [(15, 15), (45, 15), (15, 45), (45, 45)]
-    p = []
-    if halo:
-        p.append(f'<circle cx="30" cy="30" r="27" fill="{halo}" fill-opacity=".18" stroke="{halo}" stroke-width="2.5"/>')
-    # rotor discs first; the front pair is ringed in the heading colour
-    dash = ' stroke-dasharray="3 2.4"' if dashed else ""
-    for (x, y) in rotors:
-        p.append(f'<circle cx="{x}" cy="{y}" r="10.5" fill="{rotor}" fill-opacity=".3" stroke="{outline}" stroke-width="3.6"/>')
-        p.append(f'<circle cx="{x}" cy="{y}" r="10.5" fill="none" stroke="{front if y < 30 else ring}" stroke-width="2"{dash}/>')
-    # arms on top, with a casing so they read on any map
-    for (x, y) in rotors:
-        p.append(f'<line x1="30" y1="30" x2="{x}" y2="{y}" stroke="{outline}" stroke-width="6.4" stroke-linecap="round"/>')
-    for (x, y) in rotors:
-        p.append(f'<line x1="30" y1="30" x2="{x}" y2="{y}" stroke="{body}" stroke-width="3.4" stroke-linecap="round"/>')
-    for (x, y) in rotors:
-        p.append(f'<circle cx="{x}" cy="{y}" r="3" fill="{body}" stroke="{outline}" stroke-width="1.2"/>')
-    # body with a nose pointing north
-    p.append(f'<path d="M30 16 L38.5 23 V37 Q38.5 41.5 34 41.5 H26 Q21.5 41.5 21.5 37 V23 Z" fill="{body}" stroke="{outline}" stroke-width="2" stroke-linejoin="round"/>')
-    p.append(f'<path d="M30 19.2 L35 23.6 H25 Z" fill="{front}"/>')
+def shape(parts, style, width=2.2):
+    """Draw parts (svg element strings without fill/stroke) as one outlined silhouette."""
+    line = style[2]
+    casing = "".join(p.replace("/>", f' fill="{line}" stroke="{line}" stroke-width="{2 * width}" stroke-linejoin="round" stroke-linecap="round"/>') for p in parts)
+    fill = "".join(p.replace("/>", ' fill="url(#g)" stroke="url(#g)" stroke-linecap="round"/>') for p in parts)
+    return casing + fill
+
+
+ROTORS = [(14, 14), (46, 14), (14, 46), (46, 46)]
+
+
+def quad(style, pack=False, scale=1.0):
+    line = style[2]
+    arms = "".join(f'<line x1="30" y1="30" x2="{x}" y2="{y}"/>' for (x, y) in ROTORS)
+    body = (f'<g stroke="{line}" stroke-width="7.4" stroke-linecap="round">{arms}</g>'
+            + shape([f'<circle cx="{x}" cy="{y}" r="9"/>' for (x, y) in ROTORS]
+                    + ['<path d="M30 17 L36.5 23 V37 Q36.5 41 33 41 H27 Q23.5 41 23.5 37 V23 Z"/>'], style)
+            + f'<g stroke="url(#g)" stroke-width="3.2" stroke-linecap="round">{arms}</g>')
+    # rotor hubs and blade hint, in the outline colour so they stay subtle
+    for (x, y) in ROTORS:
+        body += f'<circle cx="{x}" cy="{y}" r="5.8" fill="none" stroke="{line}" stroke-opacity=".25" stroke-width="1"/>'
+        body += f'<circle cx="{x}" cy="{y}" r="2" fill="{line}" fill-opacity=".55"/>'
+    body += f'<path d="M30 17 L36.5 23 V37 Q36.5 41 33 41 H27 Q23.5 41 23.5 37 V23 Z" fill="none" stroke="{line}" stroke-opacity=".55" stroke-width="1.2"/>'
     if pack:
-        p.append('<rect x="24.5" y="28" width="11" height="11" rx="1.5" fill="#d9a54c" stroke="#fff" stroke-width="1.4"/>'
-                 '<path d="M30 28 V39 M24.5 33.5 H35.5" stroke="#8a5f1e" stroke-width="1.3"/>')
-    g = "".join(p)
-    t = []
+        body += (f'<rect x="25" y="27.5" width="10" height="10" fill="{PACK}" stroke="{line}" stroke-width="1"/>'
+                 f'<path d="M30 27.5 V37.5 M25 32.5 H35" stroke="{line}" stroke-opacity=".6" stroke-width="1"/>')
     if scale != 1.0:
-        t.append(f'translate(30 30) scale({scale}) translate(-30 -30)')
-    attrs = (f' transform="{t[0]}"' if t else "") + (f' opacity="{opacity}"' if opacity != 1.0 else "")
-    return svg(f'<g{attrs}>{g}</g>')
+        body = f'<g transform="translate(30 30) scale({scale}) translate(-30 -30)">{body}</g>'
+    return svg(body, style)
 
 
-def fixed_wing(body=NAVY, front=ORANGE, halo=None):
-    p = []
-    if halo:
-        p.append(f'<circle cx="30" cy="30" r="27" fill="{halo}" fill-opacity=".18" stroke="{halo}" stroke-width="2.5"/>')
+def fixed_wing(style):
     plane = ("M30 5 Q33 5 33 11 V22 L54 32 V36.5 L33 31.5 V45 L40 50 V53.5 L30 51 L20 53.5 V50 "
              "L27 45 V31.5 L6 36.5 V32 L27 22 V11 Q27 5 30 5 Z")
-    p.append(f'<path d="{plane}" fill="{body}" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"/>')
-    p.append(f'<path d="M30 7.2 Q31.6 7.2 31.6 11 V13 H28.4 V11 Q28.4 7.2 30 7.2 Z" fill="{front}"/>')
-    p.append(f'<path d="M33 24 L50 32.3 M27 24 L10 32.3" stroke="{BLUE_300}" stroke-width="1.4" stroke-linecap="round"/>')
-    return svg("".join(p))
+    return svg(shape([f'<path d="{plane}"/>'], style), style)
 
 
-def ugv(body=NAVY, front=ORANGE, halo=None):
-    p = []
-    if halo:
-        p.append(f'<circle cx="30" cy="30" r="27" fill="{halo}" fill-opacity=".18" stroke="{halo}" stroke-width="2.5"/>')
-    for x in (15.5, 39.5):
-        for y in (14, 36):
-            p.append(f'<rect x="{x}" y="{y}" width="5" height="11" rx="1.6" fill="#2a2f33" stroke="#fff" stroke-width="1.6"/>')
-    p.append(f'<rect x="19" y="10" width="22" height="40" rx="5" fill="{body}" stroke="#fff" stroke-width="2.2"/>')
-    p.append(f'<path d="M22 17 Q30 12.5 38 17 V21 H22 Z" fill="{front}"/>')
-    p.append(f'<rect x="23.5" y="26" width="13" height="17" rx="2" fill="none" stroke="{BLUE_300}" stroke-width="1.5"/>')
-    p.append(f'<circle cx="30" cy="34.5" r="2.6" fill="{BLUE_300}"/>')
-    return svg("".join(p))
+def ugv(style):
+    line = style[2]
+    wheels = "".join(f'<rect x="{x}" y="{y}" width="6" height="12" rx="1.5" fill="#333" stroke="{line}" stroke-width="1.5"/>'
+                     for x in (15, 39) for y in (13, 35))
+    body = shape(['<rect x="19.5" y="9" width="21" height="42" rx="5"/>'], style)
+    body += f'<path d="M23 18 Q30 13.5 37 18" fill="none" stroke="{line}" stroke-opacity=".6" stroke-width="1.4"/>'
+    body += f'<rect x="23.5" y="25" width="13" height="19" rx="2" fill="none" stroke="{line}" stroke-opacity=".45" stroke-width="1.2"/>'
+    return svg(wheels + body, style)
 
 
-def hub():
-    p = ['<circle cx="30" cy="30" r="21" fill="#fff" stroke="#fff" stroke-width="3"/>',
-         f'<circle cx="30" cy="30" r="19" fill="{NAVY}" fill-opacity=".1" stroke="{NAVY}" stroke-width="3"/>',
-         f'<circle cx="30" cy="30" r="13.5" fill="none" stroke="{ORANGE}" stroke-width="1.8" stroke-dasharray="4 3"/>',
-         # rotationally symmetric on purpose: the map rotates markers by heading, so letters would tumble
-         f'<circle cx="30" cy="30" r="6.5" fill="{NAVY}" stroke="#fff" stroke-width="1.5"/>',
-         f'<circle cx="30" cy="30" r="2.4" fill="{ORANGE}"/>']
-    return svg("".join(p))
+def hub(style):
+    line = style[2]
+    body = shape(['<circle cx="30" cy="30" r="20"/>'], style)
+    # rotationally symmetric on purpose: the map rotates markers by heading, so letters would tumble
+    body += f'<circle cx="30" cy="30" r="13" fill="none" stroke="#fff" stroke-width="2.4"/>'
+    body += f'<circle cx="30" cy="30" r="5" fill="#fff" stroke="{line}" stroke-opacity=".6" stroke-width="1"/>'
+    return svg(body, style, 10, 50)
 
 
 ICONS = {
-    "uav": quad(),
-    "uav_selected": quad(halo=ORANGE),
-    "uav_manual": quad(body=RED, rotor="#e06b6b", ring=RED, front=ORANGE),
-    "uav_with_pack": quad(pack=True),
-    "uav_timedout": quad(body=GREY, rotor="#a7b0b6", ring=GREY, front="#a7b0b6", opacity=.7, dashed=True),
-    "uav_mini": quad(body="#fff", rotor="#fff", ring=NAVY, front=ORANGE, outline=NAVY, scale=.5),
-    "fixedwing": fixed_wing(),
-    "fixedwing_selected": fixed_wing(halo=ORANGE),
-    "ugv": ugv(),
-    "ugv_selected": ugv(halo=ORANGE),
-    "hub": hub(),
+    "uav": quad(UAV),
+    "uav_selected": quad(SELECTED),
+    "uav_manual": quad(MANUAL),
+    "uav_with_pack": quad(UAV, pack=True),
+    "uav_timedout": quad(TIMED_OUT),
+    "uav_mini": quad(MINI, scale=.5),
+    "fixedwing": fixed_wing(UAV),
+    "fixedwing_selected": fixed_wing(SELECTED),
+    "ugv": ugv(UAV),
+    "ugv_selected": ugv(SELECTED),
+    "hub": hub(UAV),
 }
-for name, col in TEAM.items():
-    ICONS[f"uav-{name}"] = quad(body=col, rotor=col, ring=col, front=NAVY_900)
+for name, style in TEAM.items():
+    ICONS[f"uav-{name}"] = quad(style)
 
 if __name__ == "__main__":
     os.makedirs(OUT, exist_ok=True)
