@@ -323,9 +323,17 @@ var simulator = {
                         var scenario_end_panel = document.createElement("div");
                         if (!self.state.hasPassthrough()) {
                             // Return to menu
+                            var endDescription = "This scenario has ended, please close.";
+                            var scout = self.state.get("lastScoutResult");
+                            if (scout) {
+                                endDescription = "Score: <b>" + scout.points + " points</b><br>" +
+                                    scout.correct + " of " + scout.total + " targets classified correctly (" +
+                                    scout.byOperator + " by you, " + scout.byAgent + " by the drones), " +
+                                    scout.perMinute + " per minute, " + Math.round(scout.accuracy * 100) + "% accurate.";
+                            }
                             scenario_end_panel.innerHTML = _.template($("#scenario_end_panel").html(), {
                                 title: "Scenario Ended",
-                                description: "This scenario has ended, please close."
+                                description: endDescription
                             });
                             $.blockWithContent(scenario_end_panel);
                             $('#end_scenario').on('click', function () {

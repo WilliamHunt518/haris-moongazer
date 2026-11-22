@@ -214,6 +214,9 @@ public class ImageController extends AbstractController {
 
             boolean isDeep = deepScannedTargets.contains(id);
             boolean isReal = ((AdjustableTarget) simulator.getState().getTarget(id)).isReal();
+            if (simulator.getScoutingController().isEnabled()) {
+                simulator.getScoutingController().operatorClassify(simulator.getState().getTarget(id), status);
+            }
 
             deepScannedTargets.remove(id);
             shallowScannedTargets.remove(id);

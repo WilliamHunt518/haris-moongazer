@@ -50,6 +50,7 @@ public class Simulator {
     private final ModelCaller modelCaller;
 
     private final ImageController imageController;
+    private final ScoutingController scoutingController;
 
     public static Simulator instance;
 
@@ -94,6 +95,7 @@ public class Simulator {
         random = new Random();
 
         imageController = new ImageController(this);
+        scoutingController = new ScoutingController(this);
 
         //queueManager.initDroneDataConsumer();
     }
@@ -213,6 +215,7 @@ public class Simulator {
                     updateNextValues();
                 }
                 //this.reset();
+                scoutingController.finish();
                 this.reset(false);
 
                 break;
@@ -255,6 +258,7 @@ public class Simulator {
                             }
                         }
                         System.out.println("Num failed: " + numFailed);
+                        scoutingController.finish();
                         this.reset();
                     }
 
@@ -283,6 +287,14 @@ public class Simulator {
                                         if (getAgentController().getScheduledRemovals() > 0) {
                                             agentsToRemove.add(agent);
                                             getAgentController().decrementRemoval();
+                                        } else if (scoutingController.isEnabled() && !state.getTasks().isEmpty()) {
+                                            // Scouting (AAMAS demo): a free agent takes the nearest unclaimed target, or
+                                            // doubles up on the nearest one when all are claimed (saturating re-allocation).
+                                            // Busy agents keep their task, so nobody is pulled off mid-flight.
+                                            av.stopGoingHome();
+                                            if (!getAllocator().dynamicAssignNearest(av, false)) {
+                                                getAllocator().dynamicAssignNearest(av, true);
+                                            }
                                         } else if (getTaskController().checkForFreeTasks()) {
                                             av.stopGoingHome();
                                             getAllocator().dynamicAssign(av);
@@ -374,6 +386,7 @@ public class Simulator {
             if (state.UIOptionIsAvailable("reviewPanel")) {
                 imageController.checkForImages();
             }
+            scoutingController.step();
 
             long endTime = System.currentTimeMillis();
             sleepTime = (int) (waitTime - (endTime - startTime));
@@ -521,6 +534,7 @@ public class Simulator {
 
         LOGGER.info(String.format("%s; SVRST; Server temporarily reset ", getState().getTime()));
         imageController.reset();
+        scoutingController.reset();
 
         loadScenarioFromFile("web/scenarios/" + state.getNextFileName());
 
@@ -609,6 +623,7 @@ public class Simulator {
 
         LOGGER.info(String.format("%s; SVRST; Server reset ", getState().getTime()));
         imageController.reset();
+        scoutingController.reset();
     }
 
     public void resetLogging(String userName) {
@@ -663,6 +678,7 @@ public class Simulator {
             Object obj = GsonUtils.fromJson(json);
 
             this.state.setGameId(GsonUtils.getValue(obj, "gameId"));
+            this.state.setLastScoutResult(null);
 
             // PFM delivery missions: must be read before agents are created (legacy physics sets their speed)
             Object verificationJson = GsonUtils.getValue(obj, "verificationParameters");
@@ -964,6 +980,12 @@ public class Simulator {
                 }
             }
 
+            // Progressive-resolution scouting (AAMAS 2023 demo): must be read before the targets
+            if (GsonUtils.hasKey(obj, "scouting")) {
+                Object scoutingJson = GsonUtils.getValue(obj, "scouting");
+                scoutingController.configure(scoutingJson instanceof Map<?, ?> m ? (Map<String, Object>) m : null);
+            }
+
             List<Object> targetsJson = GsonUtils.getValue(obj, "targets");
             if (targetsJson != null) {
                 for (Object targetJson : targetsJson) {
@@ -981,8 +1003,13 @@ public class Simulator {
                         target = targetController.addTarget(lat, lng, type);
                     }
 
-                    //Hide all targets initially - they must be found!!
-                    targetController.setTargetVisibility(target.getId(), false);
+                    if (scoutingController.isEnabled() && target instanceof AdjustableTarget at) {
+                        // Scouting: every target is known and gets its own task
+                        scoutingController.addTarget(at);
+                    } else {
+                        //Hide all targets initially - they must be found!!
+                        targetController.setTargetVisibility(target.getId(), false);
+                    }
                 }
             }
 
@@ -1126,6 +1153,10 @@ public class Simulator {
     public QueueManager getQueueManager() {
     //    return queueManager;
         return null;
+    }
+
+    public ScoutingController getScoutingController() {
+        return scoutingController;
     }
 
     public ImageController getImageController() {

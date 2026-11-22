@@ -96,6 +96,8 @@ Things the operator has to find. All targets start hidden and appear when an age
 | `real` | boolean | For adjustable targets: whether this is a true positive. Setting it makes the target reviewable. |
 | `lowRes`, `highRes` | string | Image files for the scan, relative to `server/web/images/`. |
 
+In a [scouting](#progressive-resolution-scouting) scenario, adjustable targets start visible and each gets its own task.
+
 ### `tasks`
 
 Tasks that exist from the start.
@@ -203,6 +205,21 @@ A `verificationParameters` block turns a scenario into a PFM delivery mission. P
 | `legacyStudyPhysics` (top level) | boolean | Default `true` for PFM missions: use the movement speed and battery drain of the original study, so results stay comparable. |
 
 Live estimates need PRISM. See [Getting started](getting-started.md#prism-for-predictive-fleet-management).
+
+## Progressive-resolution scouting
+
+A `scouting` block turns a scenario into the AAMAS 2023 demo (Hunt et al., *Demonstrating Performance Benefits of Human-Swarm Teaming*). Every adjustable target is visible from the start, has its image in the review panel and gets a scouting task. Use it with `"allocationStyle": "dynamic"`: a free drone takes the nearest unclaimed target, or doubles up on the nearest one once all are claimed. As a drone closes in, the target's image sharpens. The operator can classify a target early (Casualty Present or No Casualty, with the `reviewPanel` and `scanButtons` UI options); otherwise the drone classifies it on arrival. The score, shown on the map and at the end, is correct finds per minute × accuracy × 100, and is logged as `DEMOSCORE`. Example: `ScoutingDemo.json`.
+
+```json
+"scouting": { "agentAccuracy": 0.8, "metresPerLevel": 50, "maxLevel": 9, "agentSpeed": 4.0 }
+```
+
+| Field | Type | Default | Meaning |
+|---|---|---|---|
+| `agentAccuracy` | number | `0.8` | Chance that a drone classifies a target correctly on arrival. |
+| `metresPerLevel` | number | `50` | Distance per resolution level: the image is at level `floor(distance / metresPerLevel)`, capped at `maxLevel`, and never gets blurrier again. |
+| `maxLevel` | number | `9` | Starting (blurriest) level. Level 0 is full resolution. |
+| `agentSpeed` | number | engine default | Speed of every drone, in metres per second. |
 
 ## Dynamic tasks and abstraction
 

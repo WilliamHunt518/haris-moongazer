@@ -43,6 +43,17 @@
       ]
     },
     {
+      "id": "scouting",
+      "title": "Progressive-resolution scouting",
+      "showcasing": "Human-swarm teaming against the clock",
+      "description": "Five drones fly to twelve reported casualties, and each image sharpens as a drone closes in. Classify a target as soon as you are sure and that drone moves on; leave it and the drone decides on arrival, right 80% of the time. 90 seconds, scored on correct finds per minute times accuracy.",
+      "image": "showcase/img/scouting.webp",
+      "file": "ScoutingDemo.json",
+      "papers": [
+        {"cite": "Hunt et al.", "venue": "AAMAS (best demo)", "year": 2023}
+      ]
+    },
+    {
       "id": "programmer",
       "title": "Drone programmer",
       "showcasing": "Programmed agents under communication limits",

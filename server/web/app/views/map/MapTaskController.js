@@ -379,7 +379,7 @@ var MapTaskController = {
             console.log("redrawing task markers")
             this.state.tasks.each(function (task) {
                 var marker = self.$el.gmap("get", "markers")[task.getId()];
-                marker.setMap(self.map)
+                if (marker) marker.setMap(self.map);  // patrol, region and scouting tasks have no marker
             });
         }
     },

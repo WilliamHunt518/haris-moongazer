@@ -23,6 +23,11 @@ public class TaskController extends AbstractController {
         super(simulator, TaskController.class.getName());
     }
 
+    /** A fresh task id, for tasks created outside this controller (e.g. scouting tasks). */
+    public String generateTaskId() {
+        return generateUID();
+    }
+
     private String generateUID() {
         return "Task-" + uniqueTaskNumber++;
     }

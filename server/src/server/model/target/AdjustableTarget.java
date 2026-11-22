@@ -11,6 +11,8 @@ public class AdjustableTarget extends Target {
     private final boolean real;
     private String lowResFileName = "";
     private String highResFileName = "";
+    /** Image sharpness for progressive-resolution scouting: 0 is full resolution, higher is blurrier. */
+    private int resolutionLevel = 0;
 
     public AdjustableTarget(String id, Coordinate coordinate, boolean isReal) {
         super(id, coordinate, Target.ADJUSTABLE);
@@ -32,5 +34,13 @@ public class AdjustableTarget extends Target {
 
     public String getHighResFileName() {
         return highResFileName;
+    }
+
+    public int getResolutionLevel() {
+        return resolutionLevel;
+    }
+
+    public void setResolutionLevel(int resolutionLevel) {
+        this.resolutionLevel = resolutionLevel;
     }
 }

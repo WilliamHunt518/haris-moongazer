@@ -986,6 +986,23 @@ App.Views.Map = Backbone.View.extend({
             this.views.control.trigger("update:agent", agent);
         }
     },
+    /** Progressive-resolution scouting score (AAMAS 2023 demo), shown only when the scenario has scouting. */
+    updateScoutPanel: function () {
+        var s = this.state.get("scouting");
+        var panel = $("#scout_score");
+        if (!s || !this.state.isInProgress()) {
+            panel.hide();
+            return;
+        }
+        panel.show();
+        $("#scout_found").html(s.correct + " correct of " + s.classified + " classified (" + s.total + " targets)");
+        $("#scout_split").html("You: " + s.byOperator + " · Drones: " + s.byAgent);
+        $("#scout_rate").html(s.perMinute + " per min · " + Math.round(s.accuracy * 100) + "% accurate");
+        $("#scout_points").html(s.points);
+        if (this.state.getTimeLimit() > 0) {
+            $("#scout_time").html($.fromTime(Math.max(0, this.state.getTimeLimit() - this.state.getTime())));
+        }
+    },
     updateScorePanel: function () {
         var scoreInfo = this.state.getScoreInfo();
         var timeRem = $.fromTime((this.state.getTimeLimit() - this.state.getTime()));

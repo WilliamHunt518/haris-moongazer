@@ -33,6 +33,20 @@ var MapTargetController = {
         this.state.targets.on("change:visible", function (target) {
             MapTargetController.updateTargetMarkerVisibility(target);
         });
+        // Scouting: a drone classified this target on arrival, so mark it as the operator's own decisions are marked
+        var mapView = this;
+        this.state.targets.on("remove", function (target) {
+            // Deferred: the state's other attributes (with the scouting results) are set after the targets update
+            setTimeout(function () {
+                var scouting = mapView.state.get("scouting");
+                var result = scouting && scouting.results ? scouting.results[target.getId()] : null;
+                if (result && result.by === "agent") {
+                    var marker = mapView.$el.gmap("get", "markers")[target.getId()];
+                    MapTargetController.clearReviewedTarget(marker);
+                    MapTargetController.placeEmptyTargetMarker(target.getPosition(), target.getId(), result.status);
+                }
+            }, 0);
+        });
         $('#lens_target_toggle').change(function () {
             MapTargetController.updateTargetVisibility($(this).is(":checked"));
         });

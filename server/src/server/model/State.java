@@ -38,7 +38,9 @@ public class State {
     private String allocationStyle;
     private String modelStyle;
     private Integer taskGroupSize;      // Max agents per new patrol/region task (scenario "taskGroupSize"); null keeps the default
-    private boolean regionCoverage;     // Scenario "regionCoverage": regions are split between agents and complete when swept
+    private boolean regionCoverage;
+    private Map<String, Object> scouting;          // Live progressive-resolution scouting score (ScoutingController)
+    private Map<String, Object> lastScoutResult;    // Final score of the last scouting run, kept across the end-of-run reset     // Scenario "regionCoverage": regions are split between agents and complete when swept
     private Boolean flockingEnabled;
     private double time;
     private Integer timeLimit;
@@ -171,6 +173,7 @@ public class State {
         modelStyle = "off";
         taskGroupSize = null;
         regionCoverage = false;
+        scouting = null;
         showReviewPanel = false;
         workloadLevel = 3;
 
@@ -403,6 +406,18 @@ public class State {
 
     public void setAllocationStyle(String allocationStyle) {
         this.allocationStyle = allocationStyle;
+    }
+
+    public void setScouting(Map<String, Object> scouting) {
+        this.scouting = scouting;
+    }
+
+    public Map<String, Object> getScouting() {
+        return scouting;
+    }
+
+    public void setLastScoutResult(Map<String, Object> lastScoutResult) {
+        this.lastScoutResult = lastScoutResult;
     }
 
     public synchronized void setTaskGroupSize(Integer taskGroupSize) {

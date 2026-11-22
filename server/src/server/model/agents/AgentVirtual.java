@@ -48,8 +48,10 @@ public class AgentVirtual extends Agent {
             for (Agent a : sensor.senseNeighbours(this, 10.0)) {
                 if (a instanceof Hub) {
                     goingHome = false;
-                    setType("withpack");
-                    setMarker("UAVWithPack");
+                    if (!Simulator.instance.getScoutingController().isEnabled()) {
+                        setType("withpack");
+                        setMarker("UAVWithPack");
+                    }
                     if (getRoute().size() <= 0) {
                         System.out.println(this);
                         stop();

@@ -100,6 +100,9 @@ var MapController = {
         this.state.on("change:scoreInfo", function () {
             self.updateScorePanel();
         });
+        this.state.on("change:scouting change:time", function () {
+            self.updateScoutPanel();
+        });
         this.state.on("change:workloadLevel change:dynamicUIFeatures", function () {
             MapAgentController.updateAllAgentMarkerIcons(true);
             MapTaskController.updateAllTaskIcons(true);
