@@ -1,5 +1,6 @@
 {
   "gameId": "SNV",
+  "simSpeed": 1.0,
   "gameDescription": "Predictive fleet management, no verification (control): mission cost and add/remove agents, but no completion-time estimate.",
   "uIOptions": [
     {

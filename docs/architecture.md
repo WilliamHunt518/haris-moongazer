@@ -70,7 +70,7 @@ The server is plain Java 21 with two dependencies (Gson and, for the legacy real
 - **Tick rate** (default 10 Hz, 2 to 30 Hz) is how finely time is sliced. Movement, turning, battery drain, failure chances and communication timeouts are all scaled by the tick length (`Simulator.getTickFraction`), so behaviour per simulated second doesn't depend on it.
 - **Speed** (×0.25 to ×8) is how many simulated seconds pass per real second.
 
-Both can be changed at any time with `POST /mode/timing` (the sliders in the interface use it), and a scenario can set its starting `tickRate`. Each scenario starts at ×1.
+Both can be changed at any time with `POST /mode/timing` (the sliders in the interface use it), and a scenario can set its starting `tickRate` and `simSpeed`. A scenario starts at ×0.5 unless it sets `simSpeed`; the study scenarios (degradation, resolution and PFM) set `"simSpeed": 1.0` so they run in real time, as in the studies.
 
 When the time limit is reached, the mission stops, and if the scenario has a `nextScenarioFile` the server prepares it so the client can offer it next.
 

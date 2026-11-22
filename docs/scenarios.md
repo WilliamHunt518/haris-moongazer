@@ -56,6 +56,7 @@ The scenarios in `server/web/scenarios/` are working examples. `AllUITest.json` 
 | `timeLimitSeconds` | number | none | Ends the scenario after this many simulated seconds. |
 | `timeLimitMinutes` | number | none | The same in minutes. If both are set, `timeLimitMinutes` wins. With neither, there is no time limit. |
 | `tickRate` | number | 10 | Engine updates per simulated second, from 2 to 30. Use 5 for the original feel. The operator can change it with the slider. |
+| `simSpeed` | number | 0.5 | Starting speed in simulated seconds per real second, from 0.25 to 8. The study scenarios set 1.0 so they run in real time. The operator can change it with the slider. |
 
 ## Agents, hub and objects
 

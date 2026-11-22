@@ -1,5 +1,6 @@
 {
   "gameId": "EpB",
+  "simSpeed": 1.0,
   "gameDescription": "Swarm degradation study. Each short episode shows a swarm of coloured drones following a leader. At some point one drone disappears. Press SPACE (or the button) as soon as you notice. The next episode starts straight away. Deck B of the study (counterbalanced decks A to D).",
   "uIOptions": [
     {

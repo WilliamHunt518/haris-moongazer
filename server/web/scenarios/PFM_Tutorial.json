@@ -1,5 +1,6 @@
 {
   "gameId": "Tutorial",
+  "simSpeed": 1.0,
   "gameDescription": "Predictive fleet management tutorial: a short two-minute mission to learn the add/remove agent controls.",
   "uIOptions": [
     {

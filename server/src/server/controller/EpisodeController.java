@@ -159,10 +159,10 @@ public class EpisodeController extends AbstractController {
     public void start() {
         if (!isEnabled())
             return;
-        // The study ran at 15 ticks per second; its flocking timing is tuned to that.
+        // The study ran in real time at 15 ticks per second; its flocking timing is tuned to that.
         if (previousTickRate == null)
             previousTickRate = simulator.getTickRate();
-        simulator.setTiming(null, 15.0);
+        simulator.setTiming(1.0, 15.0);
         simulator.changeView(1);  // the study runs in the monitor view
         if (lslWanted && lsl == null) {
             lsl = new LslMarkerStream();

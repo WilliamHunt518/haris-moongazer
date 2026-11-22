@@ -1,5 +1,6 @@
 {
   "gameId": "SFV",
+  "simSpeed": 1.0,
   "gameDescription": "Predictive fleet management, full verification: completion-time estimates come from PRISM, re-run automatically every 30 s.",
   "uIOptions": [
     {
