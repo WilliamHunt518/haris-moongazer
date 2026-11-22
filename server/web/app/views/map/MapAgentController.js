@@ -368,7 +368,8 @@ var MapAgentController = {
         var marker = this.$el.gmap("get", "markers")[agent.getId()];
         var icon;
         if (agent.getId() === this.views.clickedAgent && agent.getType() !== "groundAgent")
-            icon = this.icons.UAVSelected;
+            // A marker type can have its own selected icon ("<marker>Selected"); otherwise use the UAV one
+            icon = this.icons[agent.getMarker() + "Selected"] || this.icons.UAVSelected;
         else {
             icon = this.icons[agent.getMarker()] || this.icons.UAV;
 

@@ -142,6 +142,38 @@ App.Views.Map = Backbone.View.extend({
 
             FLAG: $.loadIcon("icons/flag_up.png", "icons/man.shadow.png", 15, 15)
         };
+        // Extra agent marker types a scenario can pick with "mkr". The classic look has no icons of its own
+        // for these, so it draws them with the original ones.
+        this.icons.UAVQuad = this.icons.UAV;
+        this.icons.UAVFixedWing = this.icons.UAV;
+        this.icons.UGV = this.icons.TruckMarker;
+        if (window.MG_LOOK !== "classic") {
+            // Modern look: top-down quadrotors (and a fixed wing, UGV and hub pad) from icons/modern/.
+            // The classic look keeps the original icons above untouched.
+            var modern = function (file) {
+                return $.loadIcon("icons/modern/" + file + ".png", "icons/plane.shadow.png", 30, 30);
+            };
+            $.extend(this.icons, {
+                UAV: modern("uav"),
+                UAVQuad: modern("uav"),
+                UAVManual: modern("uav_manual"),
+                UAVWithPack: modern("uav_with_pack"),
+                UAVSelected: modern("uav_selected"),
+                UAVQuadSelected: modern("uav_selected"),
+                UAVTimedOut: modern("uav_timedout"),
+                UAVMini: modern("uav_mini"),
+                UAVFixedWing: modern("fixedwing"),
+                UAVFixedWingSelected: modern("fixedwing_selected"),
+                TruckMarker: modern("ugv"),
+                TruckMarkerSelected: modern("ugv_selected"),
+                UGV: modern("ugv"),
+                UGVSelected: modern("ugv_selected"),
+                FLAG: modern("hub")
+            });
+            ["blue", "cyan", "green", "orange", "pink", "purple", "red", "yellow"].forEach(function (c) {
+                this.icons["UAV-" + c] = modern("uav-" + c);
+            }, this);
+        }
 
         this.first = true;
 
@@ -1153,7 +1185,9 @@ App.Views.SubMap = Backbone.View.extend({
         $.extend(this.mapOptions, options.mapOptions || {});
 
         this.icons = {
-            UAV: $.loadIcon("icons/plane.png", "icons/plane.shadow.png", 16, 16),
+            UAV: window.MG_LOOK === "classic"
+                ? $.loadIcon("icons/plane.png", "icons/plane.shadow.png", 16, 16)
+                : $.loadIcon("icons/modern/uav.png", "icons/plane.shadow.png", 30, 30),
             Human: $.loadIcon("icons/man.png", "icons/man.shadow.png", 16, 16)
         };
 

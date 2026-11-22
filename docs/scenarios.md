@@ -67,7 +67,7 @@ An array of the drones the operator starts with.
 |---|---|---|---|
 | `lat`, `lng` | number | required | Starting position. |
 | `battery` | number | 1.0 | Starting battery, from 0 to 1. |
-| `mkr` | string | standard UAV | Marker to draw, for example `"UAV"`. |
+| `mkr` | string | `"UAV"` | Marker to draw: `"UAV"` (in the Modern look a quadrotor), `"UAVQuad"`, `"UAVFixedWing"`, `"UGV"`, or a team colour `"UAV-blue"` (also cyan, green, orange, pink, purple, red, yellow). The Classic look draws every UAV type with its original plane icon. Icons live in `server/web/icons/modern/`; see [tools/icons](../tools/icons/). |
 | `programmed` | boolean | false | Run this agent's behaviour from a drone programmer policy instead of the central planner. Programmed agents need a `hub`. |
 | `policy` | string | `"GenericAgentPolicy"` | The policy class for a programmed agent: `GenericAgentPolicy` or `UseCasePolicy`. See [the drone programmer](architecture.md#the-drone-programmer). |
 
