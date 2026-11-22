@@ -1,6 +1,6 @@
 # Agent icons for the Modern look
 
-The Modern look draws agents as top-down quadrotors (plus a fixed wing, a ground vehicle and a hub pad).
+The Modern look draws agents as top-down quadrotors (plus a fixed wing, a ground vehicle and a hub pad), in the same colours and shading as the classic icons.
 The Classic look keeps the original icons in `server/web/icons/used/` and `server/web/icons/`, untouched.
 
 - `make_agent_icons.py` writes the SVG sources to `server/web/icons/modern/src/`.
@@ -11,6 +11,6 @@ python3 tools/icons/make_agent_icons.py
 node tools/icons/render_agent_icons.js
 ```
 
-Icons point north; the map rotates each marker by the agent's heading. The front rotors and nose are orange so the heading reads.
+Icons point north; the map rotates each marker by the agent's heading. They use the classic style: one colour per state, shaded light at the front to full colour at the back, with a dark outline, so the light end shows the heading as on the classic planes.
 The marker names a scenario can use (`mkr`) are listed in [docs/scenarios.md](../../docs/scenarios.md).
 Map wiring: `this.icons` in `server/web/app/views/map.js`. A marker can have its own selected icon named `<marker>Selected`.
