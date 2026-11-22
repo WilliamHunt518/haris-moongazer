@@ -100,6 +100,33 @@ var MapController = {
         this.state.on("change:scoreInfo", function () {
             self.updateScorePanel();
         });
+        this.state.on("change:scouting change:time", function () {
+            self.updateScoutPanel();
+        });
+        // Degradation study: Space (or the button) reports a disappearing drone; the questionnaire posts both answers
+        this.state.on("change:episode change:inProgress", function () {
+            self.updateEpisodePanel();
+        });
+        $(document).on("keydown", function (e) {
+            if ((e.key === " " || e.code === "Space") && self.state.get("episode") && !$(e.target).is("input, textarea")) {
+                e.preventDefault();
+                if (!e.originalEvent || !e.originalEvent.repeat) self.reportDegradation();
+            }
+        });
+        $("#episode_report").on("click", function () {
+            self.reportDegradation();
+        });
+        $("#episode_review").on("change", "input[type=radio]", function () {
+            var ready = $("input[name=ep_workload]:checked").length && $("input[name=ep_performance]:checked").length;
+            $("#episode_review_submit").prop("disabled", !ready);
+        });
+        $("#episode_review_submit").on("click", function () {
+            $(this).prop("disabled", true);
+            $.post("/review/report/episode", {
+                workload: $("input[name=ep_workload]:checked").val(),
+                performance: $("input[name=ep_performance]:checked").val()
+            });
+        });
         this.state.on("change:workloadLevel change:dynamicUIFeatures", function () {
             MapAgentController.updateAllAgentMarkerIcons(true);
             MapTaskController.updateAllTaskIcons(true);

@@ -20,6 +20,14 @@ App.Views.Review = Backbone.View.extend({
 
         this.bind("update", this.update);
 
+        // Progressive-resolution scouting: redraw the open image as its target sharpens
+        var self = this;
+        this.state.targets.on("change:resolutionLevel", function (target) {
+            if (target.getId() === self.currentImageName && self.currentImageRef) {
+                self.displayImage(self.currentImageName, self.currentImageRef, false);
+            }
+        });
+
     },
     update: function() {
 
@@ -65,7 +73,24 @@ App.Views.Review = Backbone.View.extend({
                 self.canvas.width = img.width;
                 self.canvas.height = img.height;
                 $("#image_review_canvas").css({top: 0, left: 0, position:'relative'});
+                var level = self.resolutionLevelFor(id);
+                if (level > 0) {
+                    // The demo's level images were the full image with a Gaussian blur of about 2/3 px per level
+                    // at 1920 px wide; draw the same blur here instead of shipping ten copies of every image.
+                    self.ctx.filter = "blur(" + (level * 0.67 * img.width / 1920).toFixed(2) + "px)";
+                }
                 self.ctx.drawImage(img, 0, 0, img.width, img.height);
+                self.ctx.filter = "none";
+                if (level >= 0) {
+                    var label = level === 0 ? "Full resolution" : "Resolution level " + level + " (sharpens as a drone gets closer)";
+                    var fontPx = Math.round(img.width / 64);
+                    self.ctx.font = "600 " + fontPx + "px sans-serif";
+                    var w = self.ctx.measureText(label).width;
+                    self.ctx.fillStyle = "rgba(10, 22, 40, 0.75)";
+                    self.ctx.fillRect(0, 0, w + fontPx, fontPx * 1.8);
+                    self.ctx.fillStyle = "#ffffff";
+                    self.ctx.fillText(label, fontPx / 2, fontPx * 1.25);
+                }
             };
             img.src = iRef;  // Use the argument, so it works regardless of update flag
 
@@ -73,6 +98,13 @@ App.Views.Review = Backbone.View.extend({
             alert("update error: " + e)
         }
 
+    },
+    /** The scouting resolution level of a target's image, or -1 when scouting is off. */
+    resolutionLevelFor: function (id) {
+        if (!this.state.get("scouting")) return -1;
+        var target = this.state.targets.find(function (t) { return t.getId() === id; });
+        if (!target || target.get("resolutionLevel") === undefined) return -1;
+        return target.get("resolutionLevel");
     },
     clearImage : function () {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);

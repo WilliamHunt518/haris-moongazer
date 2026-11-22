@@ -282,18 +282,16 @@ var simulator = {
                         self.initialisedState = true;
                         MapController.swapMode(self.state.getEditMode(), false);
 
-                        /*
-                        if (self.state.getUserName() === "" && self.state.isLoggingById()) {
-                            // TODO get their name, also log it in backend
+                        // Studies (degradation episodes) log to a file named after the participant id
+                        if (self.state.get("episode") && self.state.getUserName() === "" && self.state.isLoggingById()) {
                             var name = null;
                             while (name == null || name === "") {
-                                name = prompt("Please enter your prolific ID", "");
+                                name = prompt("Please enter your participant ID", "");
                             }
                             $.post("/mode/scenario/registerUser", {
                                 userName: name
                             });
                         }
-                         */
 
                         if (self.state.attributes.prov_doc == null) {
                             var api = new $.provStoreApi({
@@ -323,9 +321,17 @@ var simulator = {
                         var scenario_end_panel = document.createElement("div");
                         if (!self.state.hasPassthrough()) {
                             // Return to menu
+                            var endDescription = "This scenario has ended, please close.";
+                            var scout = self.state.get("lastScoutResult");
+                            if (scout) {
+                                endDescription = "Score: <b>" + scout.points + " points</b><br>" +
+                                    scout.correct + " of " + scout.total + " targets classified correctly (" +
+                                    scout.byOperator + " by you, " + scout.byAgent + " by the drones), " +
+                                    scout.perMinute + " per minute, " + Math.round(scout.accuracy * 100) + "% accurate.";
+                            }
                             scenario_end_panel.innerHTML = _.template($("#scenario_end_panel").html(), {
                                 title: "Scenario Ended",
-                                description: "This scenario has ended, please close."
+                                description: endDescription
                             });
                             $.blockWithContent(scenario_end_panel);
                             $('#end_scenario').on('click', function () {

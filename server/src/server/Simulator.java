@@ -50,6 +50,8 @@ public class Simulator {
     private final ModelCaller modelCaller;
 
     private final ImageController imageController;
+    private final ScoutingController scoutingController;
+    private final EpisodeController episodeController;
 
     public static Simulator instance;
 
@@ -73,6 +75,7 @@ public class Simulator {
     private int scoreLogCounter = 0;
     private boolean pfmStarted = false;
     private java.util.logging.Handler loggingFileHandler;
+    private String currentLogFile = null;   // File the current participant's log is written to (set by resetLogging)
     private static final int SCORE_LOG_EVERY_SECONDS = 10;
     private static final double PFM_HUB_RECHARGE_PER_SECOND = 0.0625;  // 0.0025 per study-era tick x 25 ticks/s
     private static final double PFM_PLACEHOLDER_ESTIMATE = 540;        // the study's 09:00 placeholder until the first result
@@ -94,6 +97,8 @@ public class Simulator {
         random = new Random();
 
         imageController = new ImageController(this);
+        scoutingController = new ScoutingController(this);
+        episodeController = new EpisodeController(this);
 
         //queueManager.initDroneDataConsumer();
     }
@@ -156,6 +161,7 @@ public class Simulator {
             if(agent.isSimulated())
                 agent.heartbeat();
         this.agentController.stopAllAgents();
+        episodeController.start();
         this.mainLoopThread = new Thread(this::mainLoop);
         mainLoopThread.start();
         this.state.setInProgress(true);
@@ -188,6 +194,13 @@ public class Simulator {
             final double tickRate = highTickRate;
             final double waitTime = 1000.0 / (tickRate * simSpeed);
             state.incrementTime(1 / tickRate);
+            // Degradation study: the episode sequence decides when the run ends
+            if (episodeController.isEnabled() && episodeController.step()) {
+                System.out.println("DONE BY EPISODES: " + state.getTime());
+                processStudyLog();
+                this.reset(false);
+                break;
+            }
             //if (state.getScenarioEndTime() !=0 && System.currentTimeMillis() >= state.getScenarioEndTime()) {
             if (state.getTimeLimit() != 0 && state.getTime() >= state.getTimeLimit()) {
                 System.out.println("DONE BY TIME: " + state.getTime());
@@ -213,6 +226,7 @@ public class Simulator {
                     updateNextValues();
                 }
                 //this.reset();
+                scoutingController.finish();
                 this.reset(false);
 
                 break;
@@ -255,6 +269,7 @@ public class Simulator {
                             }
                         }
                         System.out.println("Num failed: " + numFailed);
+                        scoutingController.finish();
                         this.reset();
                     }
 
@@ -283,6 +298,14 @@ public class Simulator {
                                         if (getAgentController().getScheduledRemovals() > 0) {
                                             agentsToRemove.add(agent);
                                             getAgentController().decrementRemoval();
+                                        } else if (scoutingController.isEnabled() && !state.getTasks().isEmpty()) {
+                                            // Scouting (AAMAS demo): a free agent takes the nearest unclaimed target, or
+                                            // doubles up on the nearest one when all are claimed (saturating re-allocation).
+                                            // Busy agents keep their task, so nobody is pulled off mid-flight.
+                                            av.stopGoingHome();
+                                            if (!getAllocator().dynamicAssignNearest(av, false)) {
+                                                getAllocator().dynamicAssignNearest(av, true);
+                                            }
                                         } else if (getTaskController().checkForFreeTasks()) {
                                             av.stopGoingHome();
                                             getAllocator().dynamicAssign(av);
@@ -374,6 +397,7 @@ public class Simulator {
             if (state.UIOptionIsAvailable("reviewPanel")) {
                 imageController.checkForImages();
             }
+            scoutingController.step();
 
             long endTime = System.currentTimeMillis();
             sleepTime = (int) (waitTime - (endTime - startTime));
@@ -521,6 +545,8 @@ public class Simulator {
 
         LOGGER.info(String.format("%s; SVRST; Server temporarily reset ", getState().getTime()));
         imageController.reset();
+        scoutingController.reset();
+        episodeController.reset();
 
         loadScenarioFromFile("web/scenarios/" + state.getNextFileName());
 
@@ -609,6 +635,8 @@ public class Simulator {
 
         LOGGER.info(String.format("%s; SVRST; Server reset ", getState().getTime()));
         imageController.reset();
+        scoutingController.reset();
+        episodeController.reset();
     }
 
     public void resetLogging(String userName) {
@@ -628,6 +656,9 @@ public class Simulator {
             allocator.resetLogger(fileHandler);
             imageController.resetLogger(fileHandler);
             modelCaller.resetLogger(fileHandler);
+            scoutingController.resetLogger(fileHandler);
+            episodeController.resetLogger(fileHandler);
+            currentLogFile = fileName;
             this.loggingFileHandler = fileHandler;
             LOGGER.info(String.format("%s; LGSTRT; Reset log (scenario, username); %s; %s ", getState().getTime(), state.getGameId(), userName));
 
@@ -663,6 +694,7 @@ public class Simulator {
             Object obj = GsonUtils.fromJson(json);
 
             this.state.setGameId(GsonUtils.getValue(obj, "gameId"));
+            this.state.setLastScoutResult(null);
 
             // PFM delivery missions: must be read before agents are created (legacy physics sets their speed)
             Object verificationJson = GsonUtils.getValue(obj, "verificationParameters");
@@ -710,6 +742,7 @@ public class Simulator {
                 List<String> possibleMethods = new ArrayList<>(Arrays.asList(
                         "random",
                         "maxsum",
+                        "maxsumsaturated",
                         "maxsumwithoverspill",
                         "bestfirst",
                         "basicbundle",
@@ -746,6 +779,23 @@ public class Simulator {
                     // state.allocationMethod initialised with default value of 'maxsum'
                 }
             }
+
+            if (GsonUtils.hasKey(obj, "taskGroupSize")) {
+                Object taskGroupSize = GsonUtils.getValue(obj, "taskGroupSize");
+                this.state.setTaskGroupSize(((Double) taskGroupSize).intValue());
+            }
+
+            if (GsonUtils.hasKey(obj, "regionCoverage")) {
+                this.state.setRegionCoverage(Boolean.TRUE.equals(GsonUtils.getValue(obj, "regionCoverage")));
+            }
+
+            // Swarm degradation study (exp_degradation_coloured)
+            if (GsonUtils.hasKey(obj, "complexFlocking"))
+                this.state.setComplexFlocking(Boolean.TRUE.equals(GsonUtils.getValue(obj, "complexFlocking")));
+            if (GsonUtils.getValue(obj, "motionScale") instanceof Double ms && ms > 0)
+                this.state.setMotionScale(ms);
+            if (obj instanceof Map<?, ?> scenarioMap && scenarioMap.get("episodes") != null)
+                episodeController.configure((Map<String, Object>) scenarioMap);
 
             if(GsonUtils.hasKey(obj,"flockingEnabled")){
                 Object flockingEnabled = GsonUtils.getValue(obj, "flockingEnabled");
@@ -954,6 +1004,12 @@ public class Simulator {
                 }
             }
 
+            // Progressive-resolution scouting (AAMAS 2023 demo): must be read before the targets
+            if (GsonUtils.hasKey(obj, "scouting")) {
+                Object scoutingJson = GsonUtils.getValue(obj, "scouting");
+                scoutingController.configure(scoutingJson instanceof Map<?, ?> m ? (Map<String, Object>) m : null);
+            }
+
             List<Object> targetsJson = GsonUtils.getValue(obj, "targets");
             if (targetsJson != null) {
                 for (Object targetJson : targetsJson) {
@@ -971,8 +1027,13 @@ public class Simulator {
                         target = targetController.addTarget(lat, lng, type);
                     }
 
-                    //Hide all targets initially - they must be found!!
-                    targetController.setTargetVisibility(target.getId(), false);
+                    if (scoutingController.isEnabled() && target instanceof AdjustableTarget at) {
+                        // Scouting: every target is known and gets its own task
+                        scoutingController.addTarget(at);
+                    } else {
+                        //Hide all targets initially - they must be found!!
+                        targetController.setTargetVisibility(target.getId(), false);
+                    }
                 }
             }
 
@@ -1118,6 +1179,27 @@ public class Simulator {
         return null;
     }
 
+    public EpisodeController getEpisodeController() {
+        return episodeController;
+    }
+
+    /** Writes the per-episode CSV summary of the degradation study next to the run's log file. */
+    private void processStudyLog() {
+        if (currentLogFile == null)
+            return;
+        try {
+            for (java.util.logging.Handler h : LOGGER.getHandlers())
+                h.flush();
+            tool.LogProcessor.processLogFile(currentLogFile);
+        } catch (Exception e) {
+            LOGGER.warning("Could not summarise the study log: " + e.getMessage());
+        }
+    }
+
+    public ScoutingController getScoutingController() {
+        return scoutingController;
+    }
+
     public ImageController getImageController() {
         return imageController;
     }
@@ -1139,7 +1221,7 @@ public class Simulator {
     }
 
     public double getStepScale() {
-        return BASE_TICK_RATE / highTickRate;
+        return state.getMotionScale() * BASE_TICK_RATE / highTickRate;
     }
 
     /** Fraction of a 5 Hz tick that one tick represents (1 at 5 Hz, 0.5 at 10 Hz). */

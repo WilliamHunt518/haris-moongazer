@@ -491,6 +491,10 @@ public abstract class Agent extends MObject implements Serializable {
                 '}';
     }
 
+    public String getMarker() {
+        return this.marker;
+    }
+
     public void setMarker(String mkr) {
         this.marker = mkr;
     }

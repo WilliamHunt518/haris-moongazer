@@ -88,6 +88,7 @@ The server holds **one mission at a time**, shared by every browser that connect
 | [REST API](docs/api.md) | Every HTTP endpoint the server exposes |
 | [Contributing](CONTRIBUTING.md) | Branches, building, CI, and the rules for new features |
 | [For later: real drones and manual control](docs/legacy/real-drones.md) | The inherited real-drone and manual-control code, not currently maintained |
+| [Archived branches](docs/legacy/branches.md) | The older research branches, kept as `archive/*` tags, and what each holds |
 
 ## Repository layout
 
@@ -114,4 +115,4 @@ Contributors: Ashley Pare (random allocation, flocking, time limits), Ayodeji Ab
 
 ## Licence
 
-No licence has been chosen for this repository yet. Until one is added, please contact the authors before reusing the code.
+HARIS is released under the [MIT License](LICENSE), copyright (c) 2022 Mohammad D. Soorati, as on the original repository.

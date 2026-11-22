@@ -23,6 +23,11 @@ public class TaskController extends AbstractController {
         super(simulator, TaskController.class.getName());
     }
 
+    /** A fresh task id, for tasks created outside this controller (e.g. scouting tasks). */
+    public String generateTaskId() {
+        return generateUID();
+    }
+
     private String generateUID() {
         return "Task-" + uniqueTaskNumber++;
     }
@@ -81,6 +86,9 @@ public class TaskController extends AbstractController {
         for (Coordinate c : path) {
             sb.append(c.getLatitude()).append(";").append(c.getLongitude()).append(";");
         }
+        if (Simulator.instance.getState().getTaskGroupSize() != null) {
+            task.setGroup(Simulator.instance.getState().getTaskGroupSize());
+        }
         LOGGER.info(String.format("%s; CRPT; Created new patrol task with points (id, lat1, lng1, lat2, lng2, ...); %s; %s", Simulator.instance.getState().getTime(), id, sb));
         //LOGGER.info(String.format("%s; CRPT; Created new patrol task with centre (id, lat, lng); %s; %s; %s", Simulator.instance.getState().getTime(), id, task.getCoordinate().getLatitude(), task.getCoordinate().getLongitude()));
         return task;
@@ -104,6 +112,9 @@ public class TaskController extends AbstractController {
         sb.append(ne.getLatitude()).append(";").append(ne.getLongitude()).append(";");
         sb.append(se.getLatitude()).append(";").append(se.getLongitude()).append(";");
         sb.append(sw.getLatitude()).append(";").append(sw.getLongitude()).append(";");
+        if (Simulator.instance.getState().getTaskGroupSize() != null) {
+            task.setGroup(Simulator.instance.getState().getTaskGroupSize());
+        }
         LOGGER.info(String.format("%s; CRRG; Created new region task with corners (id, nwlat, nwlng, nelat, nelng, selat, selng, swlat, swlng,); %s; %s", Simulator.instance.getState().getTime(), id, sb));
 
 

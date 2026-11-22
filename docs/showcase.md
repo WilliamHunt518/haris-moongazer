@@ -30,6 +30,10 @@ The three study conditions differ only in their prediction settings. Live estima
 
 *Human triage directing ground vehicles.* Drones scan the area and their images arrive for review. The operator triages each find as high, medium or low priority, and a team of programmed ground vehicles then serves the triaged targets in priority order with no further input. File: `usecase.json`. From: Soorati, Naiseh, Hunt et al., 2024.
 
+### Progressive-resolution scouting
+
+*Human-swarm teaming against the clock.* Five drones fly to twelve reported casualties, and each image in the review panel sharpens as a drone closes in. Classify a target as soon as you are sure and that drone moves on to the next one; leave it and the drone classifies it on arrival, correctly 80% of the time. Free drones are re-allocated continuously and double up once every target is taken. You have 90 seconds, scored on correct finds per minute times accuracy. File: `ScoutingDemo.json` ([settings](scenarios.md#progressive-resolution-scouting)). From: Hunt et al., AAMAS 2023 (best demo).
+
 ### Drone programmer
 
 *Programmed agents under communication limits.* Each agent runs its own policy with only local knowledge, messaging and movement. With limited communication, the operator sees last known positions and the targets relayed back to the hub. Files: `ProggedNoCom.json` (limited comms), `ProggedWithCom.json` (full comms). From: Soorati, Naiseh, Hunt et al., 2024. See [the drone programmer](architecture.md#the-drone-programmer) to write your own policy.

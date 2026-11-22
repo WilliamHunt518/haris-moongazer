@@ -1063,3 +1063,25 @@ ul.list li:hover {
 img[src="http://maps.gstatic.com/mapfiles/api-3/images/google_white2.png"], a[href^="http://maps.google.com/maps"] {
     display:none !important;
 }
+
+/* Map banners (scenario markers with shape "banner") */
+#bannerContainer { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); z-index: 6; width: min(90%, 900px); pointer-events: none; }
+.map-banner { padding: 10px 16px; margin-bottom: 6px; border-radius: 6px; font: 600 16px/1.35 sans-serif; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+.map-text-marker { white-space: pre-wrap; text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff; }
+
+/* Swarm degradation study */
+body.episode-mode .labels { display: none !important; }   /* drone ids would give away which one vanished */
+body.episode-mode #game_info, body.episode-mode #accordion_smallview { display: none !important; }
+#episode_panel { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 5; background: var(--mg-navy-900, #0d2a40);
+    color: #fff; border-radius: 8px; padding: 10px 16px; font: 15px/1.4 sans-serif; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+#episode_report { margin-top: 8px; padding: 8px 18px; font: 600 15px sans-serif; border: 0; border-radius: 6px; cursor: pointer;
+    background: var(--mg-orange-300, #ffaf46); color: #1a1a1a; }
+#episode_report:disabled { background: #8a96a3; color: #fff; cursor: default; }
+#episode_review { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,.85); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.episode_review_card { background: #fff; color: #1a1a1a; border-radius: 10px; padding: 20px 24px; max-width: 720px; width: 100%; font: 15px/1.4 sans-serif; }
+.episode_review_card h3 { margin: 12px 0 8px; font-size: 17px; }
+.episode_scale { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.episode_scale label { display: flex; flex-direction: column; align-items: center; padding: 6px 10px; border: 1px solid #ccd; border-radius: 6px; background: #f6f7f9; cursor: pointer; }
+.episode_scale_end { font-size: 13px; opacity: .7; }
+#episode_review_submit { margin-top: 16px; padding: 8px 22px; font: 600 15px sans-serif; border: 0; border-radius: 6px; background: #01386a; color: #fff; cursor: pointer; }
+#episode_review_submit:disabled { opacity: .4; cursor: default; }

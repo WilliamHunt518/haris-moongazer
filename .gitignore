@@ -167,3 +167,8 @@ server/web/verification/*
 !server/web/verification/property.pctl
 server/drones.txt
 _site/
+
+# Degradation study outputs (per-participant CSVs next to the logs, screen recordings)
+server/*.episodes.csv
+server/*.summary.csv
+server/log/recordings/

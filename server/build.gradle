@@ -20,6 +20,7 @@ dependencies {
     // Same versions as the jars previously vendored in libs/, to keep behaviour identical.
     implementation 'com.google.code.gson:gson:2.2.2'
     implementation 'com.rabbitmq:amqp-client:3.6.2'   // only for the legacy real-drone link; optional at runtime
+    implementation 'net.java.dev.jna:jna:5.14.0'       // LSL event markers for the degradation study; liblsl itself is optional
 }
 
 sourceSets {
@@ -42,4 +43,23 @@ tasks.named('run') {
     doFirst { file('log').mkdirs() }
     // Pass PRISM_HOME through as a system property for the prediction features, if set.
     if (System.getenv('PRISM_HOME')) systemProperty 'prism.home', System.getenv('PRISM_HOME')
+}
+
+// Degradation study tools (see docs/scenarios.md, "Swarm degradation study")
+//   ./gradlew -q processStudyLogs -Plogs="P01-EpA.log P02-EpA.log"   per-episode and per-size CSVs from study logs
+//   ./gradlew -q generateEpisodes -Pout=web/scenarios/eps/deck.json  a new balanced episode deck
+tasks.register('processStudyLogs', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'tool.LogProcessor'
+    workingDir = projectDir
+    if (project.hasProperty('logs')) args project.property('logs').toString().split(' ')
+}
+tasks.register('generateEpisodes', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'tool.GenerateEpisodes'
+    workingDir = projectDir
+    def a = []
+    if (project.hasProperty('out')) a << project.property('out').toString()
+    if (project.hasProperty('seed')) a << project.property('seed').toString()
+    args a
 }

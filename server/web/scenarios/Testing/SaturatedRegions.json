@@ -1,0 +1,77 @@
+{
+  "gameId": "Saturated Region Coverage",
+  "gameDescription": "Six drones and two search regions. With the saturated allocator every drone is put to work, shared between the regions in proportion to their size. Each region is split between its drones and completes once fully swept.",
+  "uIOptions": [
+    {
+      "name": "monitor",
+      "default": true,
+      "toggleable": true
+    },
+    {
+      "name": "editmode",
+      "default": true,
+      "toggleable": true
+    },
+    {
+      "name": "explored",
+      "default": true,
+      "toggleable": true
+    },
+    {
+      "name": "hazard",
+      "default": true,
+      "toggleable": true
+    },
+    {
+      "name": "predictions",
+      "default": true,
+      "toggleable": true
+    },
+    {
+      "name": "uncertainties",
+      "default": true,
+      "toggleable": true
+    }
+  ],
+  "flockingEnabled": false,
+  "loggingById": true,
+  "gameCentre": {
+    "lat": 50.929378522204615,
+    "lng": -1.4080147702592285
+  },
+  "allocationMethod": "maxsumsaturated",
+  "allocationStyle": "manual",
+  "agents": [
+    {
+      "lat": 50.92880002299894,
+      "lng": -1.4094788872327502
+    },
+    {
+      "lat": 50.929378522204615,
+      "lng": -1.4078189690011413,
+      "battery": 1.0
+    },
+    {
+      "lat": 50.9318636656946,
+      "lng": -1.4065928983124234,
+      "battery": 0.75
+    },
+    {
+      "lat": 50.92780002299894,
+      "lng": -1.4094788872327502,
+      "battery": 0.75
+    },
+    {
+      "lat": 50.93037852220461,
+      "lng": -1.4078189690011413,
+      "battery": 0.75
+    },
+    {
+      "lat": 50.92775213234095,
+      "lng": -1.4071363295995343,
+      "battery": 1
+    }
+  ],
+  "taskGroupSize": 100,
+  "regionCoverage": true
+}

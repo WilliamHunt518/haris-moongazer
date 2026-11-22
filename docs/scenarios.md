@@ -96,6 +96,8 @@ Things the operator has to find. All targets start hidden and appear when an age
 | `real` | boolean | For adjustable targets: whether this is a true positive. Setting it makes the target reviewable. |
 | `lowRes`, `highRes` | string | Image files for the scan, relative to `server/web/images/`. |
 
+In a [scouting](#progressive-resolution-scouting) scenario, adjustable targets start visible and each gets its own task.
+
 ### `tasks`
 
 Tasks that exist from the start.
@@ -117,11 +119,15 @@ Shapes drawn on the map for context, such as a search area.
 | `centreLat`, `centreLng` | number | Centre. |
 | `radius` | number | Radius in metres. |
 
+In a [degradation study](#swarm-degradation-study) episode, `markers` can also hold `{"shape": "banner", "text": "...", "colorBg": "#ffcc00", "colorTxt": "#000"}` (a message across the top of the map) and `{"shape": "textMarker", "lat": ..., "lng": ..., "text": "..."}` (a large label on the map). They show for that episode only.
+
 ## Allocation and autonomy
 
 | Field | Values | Default | Meaning |
 |---|---|---|---|
-| `allocationMethod` | `maxsum`, `random`, `maxsumwithoverspill`, `bestfirst`, `basicbundle`, `heuristicbundle`, `cbaa`, `cbba`, `cbbacoverage` | `maxsum` | The planner behind auto-allocation. An unknown value falls back to `maxsum` with a warning. |
+| `allocationMethod` | `maxsum`, `maxsumsaturated`, `random`, `maxsumwithoverspill`, `bestfirst`, `basicbundle`, `heuristicbundle`, `cbaa`, `cbba`, `cbbacoverage` | `maxsum` | The planner behind auto-allocation. An unknown value falls back to `maxsum` with a warning. |
+| `taskGroupSize` | integer | none | Maximum agents per patrol or region task created during the mission. Use it with `maxsumsaturated`, which puts every free agent to work, sharing them between tasks in proportion to each task's length. |
+| `regionCoverage` | boolean | `false` | Region tasks are split between their agents, starting at evenly spaced points along the sweep, and complete once every point has been swept. Without it a region is patrolled until the operator removes it. Example: `Testing/SaturatedRegions.json`. |
 | `allocationStyle` | `manual`, `manualwithstop`, `dynamic`, `bundle` | `manualwithstop` | How much the operator controls. `manual`: the operator assigns or confirms, and agents keep moving while they edit. `manualwithstop`: the same, but agents hold position in edit mode. `dynamic`: free agents take the next task themselves. `bundle`: agents are allocated bundles of tasks. |
 | `flockingEnabled` | boolean | false | Agents without a task follow their neighbours' average speed and heading, instead of stopping. |
 | `deepAllowed` | boolean | false | Lets the operator request deep (high-resolution) scans. |
@@ -201,6 +207,61 @@ A `verificationParameters` block turns a scenario into a PFM delivery mission. P
 | `legacyStudyPhysics` (top level) | boolean | Default `true` for PFM missions: use the movement speed and battery drain of the original study, so results stay comparable. |
 
 Live estimates need PRISM. See [Getting started](getting-started.md#prism-for-predictive-fleet-management).
+
+## Progressive-resolution scouting
+
+A `scouting` block turns a scenario into the AAMAS 2023 demo (Hunt et al., *Demonstrating Performance Benefits of Human-Swarm Teaming*). Every adjustable target is visible from the start, has its image in the review panel and gets a scouting task. Use it with `"allocationStyle": "dynamic"`: a free drone takes the nearest unclaimed target, or doubles up on the nearest one once all are claimed. As a drone closes in, the target's image sharpens. The operator can classify a target early (Casualty Present or No Casualty, with the `reviewPanel` and `scanButtons` UI options); otherwise the drone classifies it on arrival. The score, shown on the map and at the end, is correct finds per minute × accuracy × 100, and is logged as `DEMOSCORE`. Example: `ScoutingDemo.json`.
+
+```json
+"scouting": { "agentAccuracy": 0.8, "metresPerLevel": 50, "maxLevel": 9, "agentSpeed": 4.0 }
+```
+
+| Field | Type | Default | Meaning |
+|---|---|---|---|
+| `agentAccuracy` | number | `0.8` | Chance that a drone classifies a target correctly on arrival. |
+| `metresPerLevel` | number | `50` | Distance per resolution level: the image is at level `floor(distance / metresPerLevel)`, capped at `maxLevel`, and never gets blurrier again. |
+| `maxLevel` | number | `9` | Starting (blurriest) level. Level 0 is full resolution. |
+| `agentSpeed` | number | engine default | Speed of every drone, in metres per second. |
+
+## Swarm degradation study
+
+An `episodes` list turns a scenario into Will Hunt's swarm degradation study (ported from the `exp_degradation_coloured` branch; see the [archive index](legacy/branches.md)). Each episode clears the map and shows `numAgents` colour-coded drones: one leader flies off and the rest flock after it. `degradationTime` seconds in, one drone of colour `degColour` disappears without any notice, and the participant presses **Space** (or the button) as soon as they see it. Episodes follow each other straight away and the scenario ends after the last one. The view is a fixed satellite map with drone ids hidden, and the study runs at its original 15 ticks per second.
+
+Scenarios: `Degradation_Tutorial.json` (6 episodes and a questionnaire at the end) and `Degradation_A.json` to `Degradation_D.json` (the four counterbalanced 76-episode decks, about nine minutes each). They log by participant id: the page asks for the id when the scenario opens.
+
+```json
+"episodes": [
+  { "episodeLength": 7.0, "numAgents": 12, "degradationTime": 5,
+    "colours": ["blue", "green", "yellow", "red", "red", "yellow", "blue", "green", "red", "yellow", "blue", "green"],
+    "degColour": "yellow", "prevAgents": 0, "episodeCode": "EP-0-12-y-5" }
+]
+```
+
+| Episode field | Type | Default | Meaning |
+|---|---|---|---|
+| `episodeLength` | number | `7` | Seconds the episode lasts. |
+| `numAgents` | number | `8` | Drones in the episode. |
+| `degradationTime` | number | none | Seconds in when one drone disappears. Leave it out for an episode with no disappearance. |
+| `colours` | list | red, green, blue, yellow repeated | One colour per drone, the leader first: `blue`, `cyan`, `green`, `orange`, `pink`, `purple`, `red` or `yellow`. |
+| `degColour` | string | any | Colour of the drone that disappears. A free drone of that colour is removed; if none is left, any free drone. |
+| `prevAgents` | number | `0` | Swarm size of the previous episode, for the log only. |
+| `episodeCode` | string | `EP-<n>` | Code written to the log and sent as the LSL marker. The generator writes `EP-<prev>-<n>-<colour initial>-<time>`. |
+| `agentPos`, `targetPos` | string | `C`, `R` | Where the leader starts and which way it heads: `C`, `T`, `B`, `L`, `R`, `TL`, `TR`, `BL` or `BR`, around `gameCentre`. |
+| `markers` | list | none | Banners, text or circles shown during this episode (see [`markers`](#markers)). |
+
+| Scenario field | Type | Default | Meaning |
+|---|---|---|---|
+| `episodeReview` | string | `"none"` | `"each"` or `"end"` shows a questionnaire after every episode or after the last one: how mentally demanding it was and how confident the participant is, each 1 to 7 (logged as `WKLD` and `PRCP`). |
+| `motionScale` | number | `1` | Multiplies how far drones move and turn per tick. The study files use `5`, which matches the speed the study ran at (`gameSpeed` 25 on the old engine). |
+| `complexFlocking` | boolean | `false` | Tighter spacing (150 m instead of 250 m) and more heading noise (±20° instead of ±10°). |
+| `lslMarkers` | boolean | `false` | Sends each episode code, `DEG` (disappearance), `CLTT`/`CLTF` (press after or before it), `REVIEW` and `END` on a Lab Streaming Layer outlet named `OxysoftMarkers`, for fNIRS or EEG recordings. Needs liblsl installed: put it on the library path or set `HARIS_LSL_LIB` to the file. Without it the run carries on with no markers. |
+| `recordEpisodes` | boolean | `false` | Records the screen with ffmpeg and cuts one clip per episode into `log/recordings/<gameId>/`. Needs `HARIS_FFMPEG` (path to ffmpeg); the capture input defaults to `dshow` / `video=OBS Virtual Camera` on Windows, `avfoundation` on macOS and `x11grab` on Linux, and can be changed with `HARIS_FFMPEG_FORMAT` and `HARIS_FFMPEG_DEVICE`. |
+
+**Log and results.** The log has `NEWEP` (episode start), `DEGTR` (drone removed), `DGCLK` (key press, with whether it was a hit and the reaction time in milliseconds), `DGNOC` (episode ended without a press), `EPEND`, and `EPSDONE` at the end. When the run ends, two CSV files are written next to the log: `<id>-<gameId>.episodes.csv` (one row per episode) and `<id>-<gameId>.summary.csv` (hits, misses, false presses, hit rate and mean reaction time per swarm size). To rebuild them: `./gradlew -q processStudyLogs -Plogs="P01-EpA.log P02-EpB.log"` from `server/`.
+
+**New decks.** `./gradlew -q generateEpisodes -Pout=web/scenarios/eps/deck.json -Pseed=42` writes a balanced deck: swarm sizes 4, 8, 12, 16 and 20, every ordered pair of sizes appearing three times in one Eulerian tour (Hierholzer), colours balanced within each episode and disappearance times of 3, 4 or 5 seconds. It prints a check of all of this. Paste its `episodes` list into a copy of `Degradation_A.json`.
+
+Not carried over from the branch: the earlier n-back and cooldown-style episode files (`nBack*.json`, `degShort.json`, `rampUpDown.json`, `High`/`LowComplexity.json`), which the branch's final code no longer ran, and the older generators. They are in the `archive/exp_degradation_coloured` tag.
 
 ## Dynamic tasks and abstraction
 

@@ -9,5 +9,6 @@
 | [REST API](api.md) | Every HTTP endpoint |
 | [Contributing](../CONTRIBUTING.md) | Branches, CI, and the rules for changes |
 | [For later: real drones and manual control](legacy/real-drones.md) | The inherited Android app and manual-control code, not currently maintained |
+| [Archived branches](legacy/branches.md) | The older research branches, kept as `archive/*` tags, and what each holds |
 
 Back to the [project README](../README.md).
