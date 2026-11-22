@@ -1,5 +1,6 @@
 {
   "gameId": "Tutorial",
+  "simSpeed": 1.0,
   "gameDescription": "Tutorial Scenario - We have given you a hint, try to find the 3 targets in the circled areas and classify them. When you feel you understand the platform, you can close this window",
   "comment": "Resolution study tutorial (Will Hunt, 2022), from the exp_resolutionStudy branch.",
   "uIOptions": [

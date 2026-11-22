@@ -60,12 +60,14 @@ public class Simulator {
     public static final double DEFAULT_TICK_RATE = 10;
     public static final double MIN_TICK_RATE = 2, MAX_TICK_RATE = 30;
     public static final double MIN_SIM_SPEED = 0.25, MAX_SIM_SPEED = 8;
+    public static final double DEFAULT_SIM_SPEED = 0.5;  // Starting speed for a scenario without "simSpeed"
     private volatile double highTickRate = DEFAULT_TICK_RATE;  // Sim updates per simulated second
     private static final double lowTickRate = 1;  // Certain functions can be checked less often (once per second)
-    private volatile double simSpeed = 1;  // Simulated seconds per real second
+    private volatile double simSpeed = DEFAULT_SIM_SPEED;  // Simulated seconds per real second
     private final Random random;
 
     private Thread mainLoopThread;
+    private String lastTickError;   // Last tick exception logged, so a repeating one is logged once
     private int completedTargets = 0;
 
     // Predictive formal modelling (PFM) delivery missions, ported from dev_verification
@@ -194,6 +196,9 @@ public class Simulator {
             final double tickRate = highTickRate;
             final double waitTime = 1000.0 / (tickRate * simSpeed);
             state.incrementTime(1 / tickRate);
+            // An exception in one tick is logged and the loop carries on, so a single bad agent or task cannot freeze
+            // the simulation (the main loop thread used to die and the map stopped updating)
+            try {
             // Degradation study: the episode sequence decides when the run ends
             if (episodeController.isEnabled() && episodeController.step()) {
                 System.out.println("DONE BY EPISODES: " + state.getTime());
@@ -399,6 +404,13 @@ public class Simulator {
                 imageController.checkForImages();
             }
             scoutingController.step();
+            } catch (RuntimeException e) {
+                String msg = String.valueOf(e);
+                if (!msg.equals(lastTickError)) {
+                    LOGGER.log(java.util.logging.Level.SEVERE, "Simulation tick failed; carrying on", e);
+                    lastTickError = msg;
+                }
+            }
 
             long endTime = System.currentTimeMillis();
             sleepTime = (int) (waitTime - (endTime - startTime));
@@ -850,11 +862,16 @@ public class Simulator {
             }
 
             this.state.resetNext();
-            // Each scenario starts at normal speed; it may ask for its own tick rate (e.g. 5 for the classic feel)
+            // Each scenario starts at half speed (x1 felt too fast for demos) unless it sets "simSpeed"; the study
+            // scenarios set 1.0 so they run in real time as they did in the studies. A scenario may also ask for its
+            // own tick rate (e.g. 5 for the classic feel)
             Double scenarioTickRate = null;
             if (GsonUtils.hasKey(obj, "tickRate") && GsonUtils.getValue(obj, "tickRate") instanceof Double d)
                 scenarioTickRate = d;
-            setTiming(1.0, scenarioTickRate);
+            double scenarioSpeed = DEFAULT_SIM_SPEED;
+            if (GsonUtils.hasKey(obj, "simSpeed") && GsonUtils.getValue(obj, "simSpeed") instanceof Double d)
+                scenarioSpeed = d;
+            setTiming(scenarioSpeed, scenarioTickRate);
             if(GsonUtils.hasKey(obj,"timeLimitSeconds")){
                 Object timeLimitSeconds = GsonUtils.getValue(obj, "timeLimitSeconds");
                 if(timeLimitSeconds.getClass() == Double.class) {

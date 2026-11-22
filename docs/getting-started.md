@@ -127,7 +127,7 @@ The **sandbox** starts with an empty map: add agents and tasks by hand, and try 
 
 **Look:** the switch on the launch page, or `?look=classic` / `?look=modern` on any page, picks the interface. Classic is the original interface, with the original 5 Hz engine rate and 400 ms browser refresh. Modern is the refreshed interface at 10 Hz. The choice is remembered in the browser.
 
-**Speed and tick rate:** the sliders under the map lenses change the simulation speed (×0.25 to ×8) and the engine tick rate (2 to 30 Hz) while it runs. Movement, turning, battery, failures and communication timeouts are all scaled per tick, so behaviour per simulated second is the same at any tick rate. A scenario can set its own starting `tickRate`, and each scenario starts at ×1 speed.
+**Speed and tick rate:** the sliders under the map lenses change the simulation speed (×0.25 to ×8) and the engine tick rate (2 to 30 Hz) while it runs. Movement, turning, battery, failures and communication timeouts are all scaled per tick, so behaviour per simulated second is the same at any tick rate. A scenario can set its own starting `tickRate` and `simSpeed`. Scenarios start at ×0.5 unless they set `simSpeed`; the study scenarios set ×1 so they run in real time.
 
 **One mission at a time:** the server holds a single mission, shared by every browser that connects. Launching a scenario from one tab replaces whatever another tab was running. Several browsers can watch the same mission.
 

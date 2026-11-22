@@ -1,5 +1,6 @@
 {
   "gameId": "SDV",
+  "simSpeed": 1.0,
   "gameDescription": "Predictive fleet management, dummy verification: completion-time estimates come from the quick placeholder predictor.",
   "uIOptions": [
     {

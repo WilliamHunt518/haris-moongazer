@@ -128,7 +128,7 @@ public class State {
     private HashMap<Coordinate, String> pendingMap = new HashMap<>();
     private Integer workloadLevel;
     private Integer gameSpeed;
-    private double simSpeed = 1;      // Simulated seconds per real second (live slider)
+    private double simSpeed = 0.5;    // Simulated seconds per real second (live slider)
     private double tickRate = server.Simulator.DEFAULT_TICK_RATE;  // Sim ticks per simulated second (live slider)
 
     public State() {

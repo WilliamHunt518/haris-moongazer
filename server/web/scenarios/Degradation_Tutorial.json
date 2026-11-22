@@ -1,5 +1,6 @@
 {
   "gameId": "EpTutorial",
+  "simSpeed": 1.0,
   "gameDescription": "Tutorial. Swarm degradation study. Each short episode shows a swarm of coloured drones following a leader. At some point one drone disappears. Press SPACE (or the button) as soon as you notice. The next episode starts straight away. After the last episode you will be asked how demanding it felt and how confident you are.",
   "uIOptions": [
     {

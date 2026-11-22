@@ -63,7 +63,10 @@ public class AgentVirtual extends Agent {
             this.battery = this.battery > 0 ? this.battery - (baseBatteryPerTick() + (batteryVariance + Simulator.instance.getState().calculateRandomValueFor("batteryPerStep")) * perTickScale()) : 0;
         } else if (getTask() instanceof DeepScanTask) {
             //if (route.size() > 0) {
-                if (isFinalDestinationReached()) {
+                if (route.isEmpty()) {
+                    // Arrived and cleared the route; the task is removed on the task step, so wait for it
+                    stop();
+                } else if (isFinalDestinationReached()) {
                     setAllocatedTaskId("");
                     setRoute(new ArrayList<>());
                     setTempRoute(new ArrayList<>());
