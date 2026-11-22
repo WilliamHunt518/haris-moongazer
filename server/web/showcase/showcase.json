@@ -46,11 +46,26 @@
       "id": "scouting",
       "title": "Progressive-resolution scouting",
       "showcasing": "Human-swarm teaming against the clock",
-      "description": "Five drones fly to twelve reported casualties, and each image sharpens as a drone closes in. Classify a target as soon as you are sure and that drone moves on; leave it and the drone decides on arrival, right 80% of the time. 90 seconds, scored on correct finds per minute times accuracy.",
+      "description": "Five drones fly to twelve reported casualties. Click a target to open its image on the map: it sharpens live as a drone closes in. Decide as soon as you are sure and that drone moves on; leave it and the drone decides on arrival, right 80% of the time. 90 seconds, scored on correct finds per minute times accuracy.",
       "image": "showcase/img/scouting.webp",
       "file": "ScoutingDemo.json",
       "papers": [
         {"cite": "Hunt et al.", "venue": "AAMAS (best demo)", "year": 2023}
+      ]
+    },
+    {
+      "id": "resolution",
+      "title": "Resolution study",
+      "showcasing": "Compressed scans and high-resolution revisits",
+      "description": "Send your five drones to search areas of Southampton Common. Each find sends a compressed image to the scans window. Classify it, or when you are unsure request a better scan and a drone goes back for a high-resolution image. Eight minutes to find as many casualties as you can.",
+      "image": "showcase/img/resolution.webp",
+      "file": "ResolutionStudy_ComplexHigh.json",
+      "variants": [
+        {"label": "Complex, revisits allowed", "file": "ResolutionStudy_ComplexHigh.json"},
+        {"label": "Complex, compressed only", "file": "ResolutionStudy_ComplexLow.json"},
+        {"label": "Simple, revisits allowed", "file": "ResolutionStudy_SimpleHigh.json"},
+        {"label": "Simple, compressed only", "file": "ResolutionStudy_SimpleLow.json"},
+        {"label": "Tutorial", "file": "ResolutionStudy_Tutorial.json"}
       ]
     },
     {

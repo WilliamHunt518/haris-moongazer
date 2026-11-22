@@ -661,6 +661,19 @@
         -->
     </script>
 
+    <!-- AAMAS demo (scouting): popup when a target is clicked; the image sharpens live -->
+    <script type="text/template" id="target_scout_popup">
+        <div style="max-width: 480px;">
+            <p style="font-size: 15px; margin: 0 0 6px;">There may be a casualty here. A drone will check, but you can decide early.</p>
+            <canvas id="scout_popup_canvas" width="480" height="270" style="display: block;"></canvas>
+            <div id="scout_popup_level" style="font-size: 12px; opacity: .75; margin: 4px 0 6px;"></div>
+            <div style="display: flex; gap: 6px;">
+                <button class="side-by-side-buttons" id="decide_casualty">Casualty</button>
+                <button class="side-by-side-buttons" id="decide_no_casualty">No Casualty</button>
+            </div>
+        </div>
+    </script>
+
     <!-- Popup window when targets are selected-->
     <script type="text/template" id="target_scan_edit_dp">
 

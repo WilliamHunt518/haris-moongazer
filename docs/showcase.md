@@ -32,7 +32,11 @@ The three study conditions differ only in their prediction settings. Live estima
 
 ### Progressive-resolution scouting
 
-*Human-swarm teaming against the clock.* Five drones fly to twelve reported casualties, and each image in the review panel sharpens as a drone closes in. Classify a target as soon as you are sure and that drone moves on to the next one; leave it and the drone classifies it on arrival, correctly 80% of the time. Free drones are re-allocated continuously and double up once every target is taken. You have 90 seconds, scored on correct finds per minute times accuracy. File: `ScoutingDemo.json` ([settings](scenarios.md#progressive-resolution-scouting)). From: Hunt et al., AAMAS 2023 (best demo).
+*Human-swarm teaming against the clock.* Five drones fly to twelve reported casualties. Click a target's marker and its image opens in a popup on the map, sharpening live as a drone closes in. Choose Casualty or No Casualty as soon as you are sure and that drone moves on to the next one; leave it and the drone classifies it on arrival, correctly 80% of the time. Free drones are re-allocated continuously and double up once every target is taken. You have 90 seconds, scored on correct finds per minute times accuracy. File: `ScoutingDemo.json` ([settings](scenarios.md#progressive-resolution-scouting)). From: Hunt et al., AAMAS 2023 (best demo).
+
+### Resolution study
+
+*Compressed scans and high-resolution revisits.* The operator sends five drones to search areas of Southampton Common (draw regions or waypoints in Task Edit and allocate). Each target a drone finds sends a compressed image to the scans window, where the operator marks it Casualty Present or No Casualty. In the "revisits allowed" conditions they can instead request an uncompressed image: a drone goes back to the target and a high-resolution scan replaces the compressed one. Eight minutes per condition. Files: `ResolutionStudy_ComplexHigh.json`, `_ComplexLow`, `_SimpleHigh`, `_SimpleLow` (complex or simple scenes, revisits allowed or not; study codes TRRV, LKXR, QERI and WSGA) and `ResolutionStudy_Tutorial.json`. From: Will Hunt's 2022 resolution study (`exp_resolutionStudy`).
 
 ### Drone programmer
 
