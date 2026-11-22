@@ -1,3 +1,7 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>HARIS Moongazer</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -75,7 +79,8 @@ nav a:hover{color:var(--ink)}
 
 .shot{padding-block:48px 8px}
 figure{margin:0}
-figure img{display:block;width:100%;height:auto;border-radius:var(--r);border:1px solid var(--line);background:var(--sunk)}
+figure img,figure video{display:block;width:100%;height:auto;border-radius:var(--r);border:1px solid var(--line);background:var(--sunk)}
+figcaption a{color:var(--accent);font-weight:600}
 figcaption{margin-top:10px;font-size:13.5px;color:var(--muted);max-width:80ch}
 
 /* sections */
@@ -200,8 +205,8 @@ footer .wrap{display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between}
 
 <div class="wrap shot">
   <figure>
-    <img src="img/overview.webp" width="1800" height="1125" alt="HARIS operator view: ten UAVs over a park in Southampton with uncertainty circles, a region task and a selected drone's camera feed in the side panel">
-    <figcaption>The operator view. Ten UAVs over Southampton Common, with the uncertainty and communication-range lenses on, a region sweep in progress, and the selected drone's camera in the monitor panel.</figcaption>
+    <video src="media/overview.mp4" poster="media/overview.webp" width="1600" height="900" muted loop playsinline autoplay aria-label="HARIS operator view in four recorded runs: drone teams flying to missions, a delivery mission with live completion estimates, scan and triage with ground vehicles, and progressive-resolution scouting"></video>
+    <figcaption>The operator view, in four recorded runs: team allocation, predictive fleet management, scan review and triage, and scouting. <a href="media/tour.mp4">Watch the 1½-minute feature tour</a></figcaption>
   </figure>
 </div>
 
@@ -213,8 +218,8 @@ footer .wrap{display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between}
       <p>Open HARIS and you get a tile for each feature, with the paper it comes from. Pick a study condition from the chips, then launch. Or open the sandbox and build a mission from scratch.</p>
     </div>
     <figure class="launchshot">
-      <img src="img/launch.webp" width="1800" height="1200" loading="lazy" alt="The HARIS Moongazer launch page: tiles for predictive fleet management, operator lenses, scan review and triage, drone programmer, adaptive abstraction and the sandbox">
-      <figcaption>Six tiles: predictive fleet management, operator lenses, scan review and triage, the drone programmer, adaptive heatmaps, and the sandbox. The tiles are defined in one JSON file, so adding a showcase needs no code.</figcaption>
+      <img src="img/launch.webp" width="1800" height="1200" loading="lazy" alt="The HARIS Moongazer launch page: tiles for predictive fleet management, operator lenses, scan review and triage, progressive-resolution scouting, drone programmer, adaptive abstraction and the sandbox">
+      <figcaption>Seven tiles: predictive fleet management, operator lenses, scan review and triage, progressive-resolution scouting, the drone programmer, adaptive heatmaps, and the sandbox. The tiles are defined in one JSON file, so adding a showcase needs no code.</figcaption>
     </figure>
   </div>
 </section>
@@ -237,13 +242,13 @@ footer .wrap{display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between}
         <p class="used"><b>Used in:</b> Gu et al., RO-MAN 2023 · Abioye et al., HRI 2024 and ACM THRI 2025 (180 participants)</p>
       </div>
       <div class="media">
-        <div class="seg" role="group" aria-label="Estimate state" data-switch="pfm">
-          <button aria-pressed="true" data-src="img/pfm_red.webp"><span class="dot" style="background:var(--bad)"></span>Behind deadline</button>
-          <button aria-pressed="false" data-src="img/pfm_amber.webp"><span class="dot" style="background:var(--signal)"></span>After adding drones</button>
-          <button aria-pressed="false" data-src="img/pfm_green.webp"><span class="dot" style="background:var(--ok)"></span>On track</button>
+        <div class="seg" role="group" aria-label="Study condition" data-switch="pfm">
+          <button aria-pressed="true" data-src="media/pfm_live.mp4"><span class="dot" style="background:var(--bad)"></span>Live PRISM</button>
+          <button aria-pressed="false" data-src="media/pfm_placebo.mp4"><span class="dot" style="background:var(--signal)"></span>Placebo predictor</button>
+          <button aria-pressed="false" data-src="media/pfm_none.mp4"><span class="dot" style="background:var(--muted)"></span>No prediction</button>
         </div>
-        <figure class="stage"><img id="pfm" src="img/pfm_red.webp" width="1600" height="1000" alt="Delivery mission with estimated completion time, mission cost and Add or Remove Agent buttons showing predicted time and cost changes"></figure>
-        <p class="note">One mission with real PRISM results. Adding drones moves the estimate from red to amber to green, at a running cost per drone.</p>
+        <figure class="stage"><video id="pfm" src="media/pfm_live.mp4" poster="media/pfm_live.webp" width="1280" height="720" muted loop playsinline autoplay preload="none" aria-label="Delivery mission with estimated completion time, mission cost and Add or Remove Agent buttons"></video></figure>
+        <p class="note">The three study conditions, recorded on the same mission. Only the prediction block of the scenario file differs.</p>
       </div>
     </article>
 
@@ -300,12 +305,8 @@ footer .wrap{display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between}
         <p class="used"><b>Used in:</b> Soorati et al. 2024, digital twin book chapter</p>
       </div>
       <div class="media">
-        <div class="seg" role="group" aria-label="Step" data-switch="tri">
-          <button aria-pressed="true" data-src="img/scan.webp">1 · Review scans</button>
-          <button aria-pressed="false" data-src="img/triaged.webp">2 · Triaged</button>
-          <button aria-pressed="false" data-src="img/ugv.webp">3 · UGV response</button>
-        </div>
-        <figure class="stage"><img id="tri" src="img/scan.webp" width="1600" height="1000" alt="Scan review panel with triage buttons for high, medium and low priority"></figure>
+        <figure class="stage"><video id="tri" src="media/tri.mp4" poster="media/tri.webp" width="1280" height="720" muted loop playsinline autoplay preload="none" aria-label="Drones scan possible casualties while ground vehicles drive to the targets the operator has triaged"></video></figure>
+        <p class="note">A recorded run: as each scan is triaged, it becomes a ground task, and the ground vehicles serve the queue by priority.</p>
       </div>
     </article>
 
@@ -319,12 +320,13 @@ footer .wrap{display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between}
         <p class="used"><b>Used in:</b> Abioye, Landowska et al. 2024, fNIRS adaptive interaction</p>
       </div>
       <div class="media">
-        <div class="seg" role="group" aria-label="Abstraction level" data-switch="heat">
-          <button aria-pressed="false" data-src="img/heat1.webp">Level 1 · agents</button>
-          <button aria-pressed="true" data-src="img/heat5.webp">Level 5 · heatmap</button>
-          <button aria-pressed="false" data-src="img/heatdrag.webp">Assign a cluster</button>
+        <div class="seg" role="group" aria-label="Heatmap version" data-switch="heat">
+          <button aria-pressed="true" data-src="media/heat_lens.mp4">Allocation lens</button>
+          <button aria-pressed="false" data-src="media/heat_teams.mp4">Fixed teams (2024)</button>
+          <button aria-pressed="false" data-src="media/heat_study.mp4">Original study</button>
         </div>
-        <figure class="stage"><img id="heat" src="img/heat5.webp" width="1100" height="935" alt="Heatmap of agent clusters in blue and task clusters in green with counts"></figure>
+        <figure class="stage"><video id="heat" src="media/heat_lens.mp4" poster="media/heat_lens.webp" width="1280" height="720" muted loop playsinline autoplay preload="none" aria-label="Drone teams drawn as coloured clusters flying to mission zones, with an allocation board listing which team covers which mission"></video></figure>
+        <p class="note">The allocation lens gives each team a colour and letter, shared by its heat, arrow and the pips of the tasks it covers.</p>
       </div>
     </article>
 
@@ -358,10 +360,10 @@ footer .wrap{display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between}
       </div>
       <div class="media">
         <div class="seg" role="group" aria-label="Communication" data-switch="prog">
-          <button aria-pressed="true" data-src="img/prog_c.webp">Comms constrained</button>
-          <button aria-pressed="false" data-src="img/prog_u.webp">Unconstrained</button>
+          <button aria-pressed="true" data-src="media/prog_c.mp4">Comms constrained</button>
+          <button aria-pressed="false" data-src="media/prog_u.mp4">Unconstrained</button>
         </div>
-        <figure class="stage"><img id="prog" src="img/prog_c.webp" width="1100" height="935" loading="lazy" alt="Programmed agents spreading from a hub under communication limits"></figure>
+        <figure class="stage"><video id="prog" src="media/prog_c.mp4" poster="media/prog_c.webp" width="1280" height="720" muted loop playsinline autoplay preload="none" aria-label="Programmed agents spreading from a hub under communication limits"></video></figure>
 <pre class="code" aria-label="Example policy"><span class="k">public void</span> step() {
   <span class="k">if</span> (a.isGoingHome()) a.followRoute();
   <span class="k">else if</span> (a.isStopped()) {
@@ -543,7 +545,8 @@ document.querySelectorAll('[data-switch]').forEach(group=>{
   const img=document.getElementById(group.dataset.switch);
   group.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
     group.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));
-    img.src=b.dataset.src;
+    if(img.tagName==='VIDEO'){img.poster=b.dataset.src.replace(/\.mp4$/,'.webp');img.src=b.dataset.src;img.play().catch(()=>{});}
+    else img.src=b.dataset.src;
   }));
 });
 // resolution slider
@@ -602,4 +605,10 @@ document.querySelectorAll('[data-switch]').forEach(group=>{
   function loop(){step();draw();requestAnimationFrame(loop);}
   if(reduce){for(let i=0;i<200;i++)step();draw();}else loop();
 })();
+// feature clips: play only while on screen, and not at all for reduced motion
+(()=>{const vids=[...document.querySelectorAll('video[autoplay]')];
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches){vids.forEach(v=>{v.removeAttribute('autoplay');v.pause();v.controls=true;});return;}
+  if(!('IntersectionObserver' in window))return;
+  const io=new IntersectionObserver(es=>es.forEach(e=>{const v=e.target;if(e.isIntersecting){v.preload='auto';v.play().catch(()=>{});}else v.pause();}),{rootMargin:'200px'});
+  vids.forEach(v=>io.observe(v));})();
 </script>

@@ -1,0 +1,17 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+html,body{margin:0;width:1280px;height:720px;overflow:hidden;background:#eef2f5;font-family:"Segoe UI",system-ui,Roboto,Arial,sans-serif;color:#17262f}
+.wrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:44px}
+.logo{width:230px;height:230px}
+h1{margin:0;font-size:76px;letter-spacing:-.5px;color:#0d2a40;font-weight:800;line-height:1}
+h1 span{font-weight:400;color:#1c5a85}
+p{margin:16px 0 0;font-size:26px;color:#5a6b76}
+.u{margin-top:26px;font-size:24px;color:#133d5b;font-weight:600}
+.u small{display:block;font-weight:400;color:#5a6b76;font-size:20px;margin-top:6px}
+.bar{position:absolute;left:0;right:0;bottom:0;height:10px;background:linear-gradient(90deg,#0d2a40 0,#0d2a40 70%,#fb9d23 70%)}
+.k{position:absolute;top:34px;left:44px;font-size:18px;letter-spacing:2px;text-transform:uppercase;color:#e78404;font-weight:700}
+</style></head><body>
+<div class="k" id="k"></div>
+<div class="wrap"><img class="logo" src="hare.svg"><div><h1>HARIS <span>Moongazer</span></h1><p id="t">Human And Robot Interactive Swarm simulator</p><div class="u" id="u"></div></div></div>
+<div class="bar"></div>
+<script>const q=new URLSearchParams(location.search);for(const k of ['k','t','u']){if(q.get(k)!==null)document.getElementById(k).innerHTML=q.get(k);}</script>
+</body></html>

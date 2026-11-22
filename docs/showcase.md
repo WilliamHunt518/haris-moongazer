@@ -99,7 +99,7 @@ CI checks every tile: each image must be served and each scenario file (includin
 
 The website is published at <https://williamhunt518.github.io/haris-moongazer/>. It has two parts:
 
-- **The showcase site** at the root, from `site/` (a single `index.html` and `site/img/`).
+- **The showcase site** at the root, from `site/` (a single `index.html`, screenshots in `site/img/` and looping clips in `site/media/`).
 - **The online demo** under `app/`, which is the real browser client from `server/web/` running in replay mode. Instead of talking to a server, it plays back a recorded run, so it works on static hosting. Visitors can watch, pan, zoom and toggle lenses, but cannot steer the mission.
 
 ### Replay mode
@@ -126,7 +126,18 @@ python3 tools/record_replay.py --file AllUITest.json --id lenses --seconds 120 \
     --operator targets --speed 4 --out server/web/replays
 ```
 
-`--operator targets` adds a scripted operator: two seconds in, it places a waypoint on every target (or a ring of waypoints when there are no targets), runs auto-allocation and confirms it, and repeats the allocation every `--allocate-every` seconds. PFM missions allocate themselves, so they use `--operator none`. The recording stores the full state in the first frame and only the changed top-level keys after that, sampled at `--hz` frames per simulated second.
+`--operator targets` adds a scripted operator: two seconds in, it places a waypoint on every target (or a ring of waypoints when there are no targets), runs auto-allocation and confirms it, and repeats the allocation every `--allocate-every` seconds. PFM missions allocate themselves, so they use `--operator none`. `--operator triage` (for `usecase.json`) also does what the browser and the operator do in a live run: it reveals a target once a drone is within 50 m, and triages each scan a few seconds after it arrives, cycling high, medium and low priority, so the ground vehicles respond. `--operator teams` drives the team heatmaps. The recording stores the full state in the first frame and only the changed top-level keys after that, sampled at `--hz` frames per simulated second.
+
+### Videos and site clips
+
+`tools/video/make.sh` turns the recordings into video: a 25-second overview for presentations, a 1½-minute feature tour with captions, and the looping clips, poster frames and launch-page screenshot used by the site (written to `site/media/` and `site/img/launch.webp`). It drives the real interface in headless Chromium (Playwright) with a frozen browser clock, so every frame is captured at exactly 30 fps, and needs a running server for the launch page plus `ffmpeg`.
+
+```bash
+cd server && ./gradlew run          # in one terminal
+tools/video/make.sh                 # in another; videos land in tools/video/out/
+```
+
+Without a Maps key, Google draws "for development purposes only" over every tile, so the recorder replaces the base map with a plain grid. With a working key on the server, run `REAL_MAP=1 tools/video/make.sh` to keep Google's map. Scenes, captions and timings are in `tools/video/short.js` and `tools/video/long.js`.
 
 ### Publishing
 
