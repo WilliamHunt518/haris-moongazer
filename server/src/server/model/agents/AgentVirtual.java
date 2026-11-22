@@ -24,6 +24,7 @@ public class AgentVirtual extends Agent {
     private final double batteryVariance;
     private final double speedVariance;
     private boolean charging = false;
+    private int flockCounter = 0;   // Ticks since the last study-flocking heading update
 
     public AgentVirtual(String id, Coordinate position, Sensor sensor) {
         super(id, position, true);
@@ -110,6 +111,10 @@ public class AgentVirtual extends Agent {
 
     @Override
     void performFlocking() {
+        if (Simulator.instance.getState().isEpisodeMode()) {
+            performStudyFlocking();
+            return;
+        }
         //Align agent, if aligned then moved towards target
         if(!isStopped() && this.adjustFlockingHeading()) {
             // From ms/s, but instead of dividing by 1 second, it's by one game step (fraction of a second)
@@ -224,6 +229,68 @@ public class AgentVirtual extends Agent {
         }
         adjustHeading(targetHeading);
         return true;
+    }
+
+    /**
+     * Flocking used by the swarm degradation study (exp_degradation_coloured). Agents keep moving along their heading
+     * every tick and re-plan the heading every 0.4 simulated seconds (every 6th tick at the study's 15 Hz).
+     */
+    private void performStudyFlocking() {
+        if (isStopped())
+            return;
+        int replanEvery = Math.max(1, (int) Math.round(0.4 * Simulator.instance.getTickRate()));
+        if (++flockCounter >= replanEvery) {
+            adjustStudyFlockingHeading();
+            flockCounter = 0;
+        }
+        double possDistToMove = (speed + speedVariance + Simulator.instance.getState().calculateRandomValueFor("speedPerSecond")) * Simulator.instance.getStepScale();
+        this.moveAlongHeading(possDistToMove);
+    }
+
+    /**
+     * Study flocking heading: align with every agent (the leader, which has a task, weighs 50 times more), move away
+     * from agents that are too close, then add a little random heading noise. There is no attraction term.
+     */
+    private void adjustStudyFlockingHeading() {
+        boolean complex = Simulator.instance.getState().isComplexFlocking();
+        List<Agent> neighbours = this.sensor.senseNeighbours(this, Double.MAX_VALUE);
+        if (neighbours.isEmpty())
+            return;
+
+        double xSum = 0.0, ySum = 0.0;
+        for (Agent neighbour : neighbours) {
+            double multiplier = neighbour.getTask() != null ? 50 : 1;
+            double neighbourHeading = Math.toRadians(neighbour.getHeading());
+            xSum += Math.cos(neighbourHeading) * multiplier;
+            ySum += Math.sin(neighbourHeading) * multiplier;
+        }
+        double magnitude = Math.sqrt(xSum * xSum + ySum * ySum);
+        double xAlign = magnitude > 0 ? xSum / magnitude : 0;
+        double yAlign = magnitude > 0 ? ySum / magnitude : 0;
+
+        double xRepulse = 0.0, yRepulse = 0.0;
+        List<Agent> tooClose = this.sensor.senseNeighbours(this, complex ? 150.0 : 250.0);
+        xSum = 0.0;
+        ySum = 0.0;
+        for (Agent neighbour : tooClose) {
+            double lat1 = Math.toRadians(this.getCoordinate().getLatitude());
+            double lng1 = Math.toRadians(this.getCoordinate().getLongitude());
+            double lat2 = Math.toRadians(neighbour.getCoordinate().getLatitude());
+            double lng2 = Math.toRadians(neighbour.getCoordinate().getLongitude());
+            double dLng = (lng2 - lng1);
+            ySum -= Math.sin(dLng) * Math.cos(lat2);
+            xSum -= Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+            magnitude = Math.sqrt(xSum * xSum + ySum * ySum);
+            if (magnitude > 0) {
+                xRepulse = xSum / magnitude;
+                yRepulse = ySum / magnitude;
+            }
+        }
+
+        double targetHeading = Math.atan2(yAlign + yRepulse, xAlign + xRepulse);
+        double noiseDegrees = complex ? 20 : 10;
+        targetHeading += Math.toRadians((Math.random() * 2 - 1) * noiseDegrees);
+        adjustHeading(targetHeading);
     }
 
     /**

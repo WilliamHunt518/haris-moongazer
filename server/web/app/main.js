@@ -282,18 +282,16 @@ var simulator = {
                         self.initialisedState = true;
                         MapController.swapMode(self.state.getEditMode(), false);
 
-                        /*
-                        if (self.state.getUserName() === "" && self.state.isLoggingById()) {
-                            // TODO get their name, also log it in backend
+                        // Studies (degradation episodes) log to a file named after the participant id
+                        if (self.state.get("episode") && self.state.getUserName() === "" && self.state.isLoggingById()) {
                             var name = null;
                             while (name == null || name === "") {
-                                name = prompt("Please enter your prolific ID", "");
+                                name = prompt("Please enter your participant ID", "");
                             }
                             $.post("/mode/scenario/registerUser", {
                                 userName: name
                             });
                         }
-                         */
 
                         if (self.state.attributes.prov_doc == null) {
                             var api = new $.provStoreApi({

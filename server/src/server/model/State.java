@@ -40,6 +40,9 @@ public class State {
     private Integer taskGroupSize;      // Max agents per new patrol/region task (scenario "taskGroupSize"); null keeps the default
     private boolean regionCoverage;
     private Map<String, Object> scouting;          // Live progressive-resolution scouting score (ScoutingController)
+    private Map<String, Object> episode;            // Live episode status for the degradation study (EpisodeController); null when off
+    private boolean complexFlocking;                // Scenario "complexFlocking": tighter spacing and more heading noise in study flocking
+    private double motionScale = 1;                 // Scenario "motionScale": multiplies agent movement and turning per tick
     private Map<String, Object> lastScoutResult;    // Final score of the last scouting run, kept across the end-of-run reset     // Scenario "regionCoverage": regions are split between agents and complete when swept
     private Boolean flockingEnabled;
     private double time;
@@ -174,6 +177,9 @@ public class State {
         taskGroupSize = null;
         regionCoverage = false;
         scouting = null;
+        episode = null;
+        complexFlocking = false;
+        motionScale = 1;
         showReviewPanel = false;
         workloadLevel = 3;
 
@@ -195,6 +201,25 @@ public class State {
         dynamicUIFeatures.clear();
         hazardHits.init();
 
+    }
+
+    /**
+     * Clears the scene (agents, tasks, targets, hazards, allocations) between episodes, keeping the scenario's
+     * settings, time and UI options.
+     */
+    public synchronized void softReset() {
+        scoreInfo.clear();
+        agents.clear();
+        ghosts.clear();
+        tasks.clear();
+        completedTasks.clear();
+        targets.clear();
+        hazards.clear();
+        allocation.clear();
+        tempAllocation.clear();
+        hazardHits.clear();
+        hazardHits.init();
+        storedImages.clear();
     }
 
     /**
@@ -406,6 +431,42 @@ public class State {
 
     public void setAllocationStyle(String allocationStyle) {
         this.allocationStyle = allocationStyle;
+    }
+
+    public void setEpisode(Map<String, Object> episode) {
+        this.episode = episode;
+    }
+
+    public Map<String, Object> getEpisode() {
+        return episode;
+    }
+
+    public boolean isEpisodeMode() {
+        return episode != null;
+    }
+
+    public void setComplexFlocking(boolean complexFlocking) {
+        this.complexFlocking = complexFlocking;
+    }
+
+    public boolean isComplexFlocking() {
+        return complexFlocking;
+    }
+
+    public void setMotionScale(double motionScale) {
+        this.motionScale = motionScale;
+    }
+
+    public double getMotionScale() {
+        return motionScale;
+    }
+
+    public synchronized void addMarker(String marker) {
+        markers.add(marker);
+    }
+
+    public synchronized void removeMarker(String marker) {
+        markers.remove(marker);
     }
 
     public void setScouting(Map<String, Object> scouting) {

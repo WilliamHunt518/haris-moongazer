@@ -185,19 +185,18 @@ var MapAgentController = {
         this.updateTable();
     },
     onAgentRemove: function (agent) {
-        console.log('Agent removed ' + agent.getId());
-
-        var uid = agent.getId() + "_removed";
-        var content = _.template($("#popup_left_right").html(), {
-            left_content: agent.getId() + " has been removed",
-            right_content: "View",
-            uid: uid
-        });
-
-        spop({
-            template: content,
-            style: 'default'
-        });
+        // Degradation study: a vanishing drone must not be announced
+        if (!this.state.get("episode")) {
+            var content = _.template($("#popup_left_right").html(), {
+                left_content: agent.getId() + " has been removed",
+                right_content: "View",
+                uid: agent.getId() + "_removed"
+            });
+            spop({
+                template: content,
+                style: 'default'
+            });
+        }
 
 
         var marker = this.$el.gmap("get", "markers")[agent.getId()];
@@ -369,8 +368,7 @@ var MapAgentController = {
         if (agent.getId() === this.views.clickedAgent && agent.getType() !== "groundAgent")
             icon = this.icons.UAVSelected;
         else {
-            icon = this.icons[agent.getMarker()];
-            console.log("Agent marker: " + agent.getMarker() + " icon: " + icon);
+            icon = this.icons[agent.getMarker()] || this.icons.UAV;
 
             // This used to be a core part of the visualisation but now we define markers in the backend. Keep it
             //  around in case something doesn't work as expected.

@@ -119,6 +119,8 @@ Shapes drawn on the map for context, such as a search area.
 | `centreLat`, `centreLng` | number | Centre. |
 | `radius` | number | Radius in metres. |
 
+In a [degradation study](#swarm-degradation-study) episode, `markers` can also hold `{"shape": "banner", "text": "...", "colorBg": "#ffcc00", "colorTxt": "#000"}` (a message across the top of the map) and `{"shape": "textMarker", "lat": ..., "lng": ..., "text": "..."}` (a large label on the map). They show for that episode only.
+
 ## Allocation and autonomy
 
 | Field | Values | Default | Meaning |
@@ -220,6 +222,46 @@ A `scouting` block turns a scenario into the AAMAS 2023 demo (Hunt et al., *Demo
 | `metresPerLevel` | number | `50` | Distance per resolution level: the image is at level `floor(distance / metresPerLevel)`, capped at `maxLevel`, and never gets blurrier again. |
 | `maxLevel` | number | `9` | Starting (blurriest) level. Level 0 is full resolution. |
 | `agentSpeed` | number | engine default | Speed of every drone, in metres per second. |
+
+## Swarm degradation study
+
+An `episodes` list turns a scenario into Will Hunt's swarm degradation study (ported from the `exp_degradation_coloured` branch; see the [archive index](legacy/branches.md)). Each episode clears the map and shows `numAgents` colour-coded drones: one leader flies off and the rest flock after it. `degradationTime` seconds in, one drone of colour `degColour` disappears without any notice, and the participant presses **Space** (or the button) as soon as they see it. Episodes follow each other straight away and the scenario ends after the last one. The view is a fixed satellite map with drone ids hidden, and the study runs at its original 15 ticks per second.
+
+Scenarios: `Degradation_Tutorial.json` (6 episodes and a questionnaire at the end) and `Degradation_A.json` to `Degradation_D.json` (the four counterbalanced 76-episode decks, about nine minutes each). They log by participant id: the page asks for the id when the scenario opens.
+
+```json
+"episodes": [
+  { "episodeLength": 7.0, "numAgents": 12, "degradationTime": 5,
+    "colours": ["blue", "green", "yellow", "red", "red", "yellow", "blue", "green", "red", "yellow", "blue", "green"],
+    "degColour": "yellow", "prevAgents": 0, "episodeCode": "EP-0-12-y-5" }
+]
+```
+
+| Episode field | Type | Default | Meaning |
+|---|---|---|---|
+| `episodeLength` | number | `7` | Seconds the episode lasts. |
+| `numAgents` | number | `8` | Drones in the episode. |
+| `degradationTime` | number | none | Seconds in when one drone disappears. Leave it out for an episode with no disappearance. |
+| `colours` | list | red, green, blue, yellow repeated | One colour per drone, the leader first: `blue`, `cyan`, `green`, `orange`, `pink`, `purple`, `red` or `yellow`. |
+| `degColour` | string | any | Colour of the drone that disappears. A free drone of that colour is removed; if none is left, any free drone. |
+| `prevAgents` | number | `0` | Swarm size of the previous episode, for the log only. |
+| `episodeCode` | string | `EP-<n>` | Code written to the log and sent as the LSL marker. The generator writes `EP-<prev>-<n>-<colour initial>-<time>`. |
+| `agentPos`, `targetPos` | string | `C`, `R` | Where the leader starts and which way it heads: `C`, `T`, `B`, `L`, `R`, `TL`, `TR`, `BL` or `BR`, around `gameCentre`. |
+| `markers` | list | none | Banners, text or circles shown during this episode (see [`markers`](#markers)). |
+
+| Scenario field | Type | Default | Meaning |
+|---|---|---|---|
+| `episodeReview` | string | `"none"` | `"each"` or `"end"` shows a questionnaire after every episode or after the last one: how mentally demanding it was and how confident the participant is, each 1 to 7 (logged as `WKLD` and `PRCP`). |
+| `motionScale` | number | `1` | Multiplies how far drones move and turn per tick. The study files use `5`, which matches the speed the study ran at (`gameSpeed` 25 on the old engine). |
+| `complexFlocking` | boolean | `false` | Tighter spacing (150 m instead of 250 m) and more heading noise (±20° instead of ±10°). |
+| `lslMarkers` | boolean | `false` | Sends each episode code, `DEG` (disappearance), `CLTT`/`CLTF` (press after or before it), `REVIEW` and `END` on a Lab Streaming Layer outlet named `OxysoftMarkers`, for fNIRS or EEG recordings. Needs liblsl installed: put it on the library path or set `HARIS_LSL_LIB` to the file. Without it the run carries on with no markers. |
+| `recordEpisodes` | boolean | `false` | Records the screen with ffmpeg and cuts one clip per episode into `log/recordings/<gameId>/`. Needs `HARIS_FFMPEG` (path to ffmpeg); the capture input defaults to `dshow` / `video=OBS Virtual Camera` on Windows, `avfoundation` on macOS and `x11grab` on Linux, and can be changed with `HARIS_FFMPEG_FORMAT` and `HARIS_FFMPEG_DEVICE`. |
+
+**Log and results.** The log has `NEWEP` (episode start), `DEGTR` (drone removed), `DGCLK` (key press, with whether it was a hit and the reaction time in milliseconds), `DGNOC` (episode ended without a press), `EPEND`, and `EPSDONE` at the end. When the run ends, two CSV files are written next to the log: `<id>-<gameId>.episodes.csv` (one row per episode) and `<id>-<gameId>.summary.csv` (hits, misses, false presses, hit rate and mean reaction time per swarm size). To rebuild them: `./gradlew -q processStudyLogs -Plogs="P01-EpA.log P02-EpB.log"` from `server/`.
+
+**New decks.** `./gradlew -q generateEpisodes -Pout=web/scenarios/eps/deck.json -Pseed=42` writes a balanced deck: swarm sizes 4, 8, 12, 16 and 20, every ordered pair of sizes appearing three times in one Eulerian tour (Hierholzer), colours balanced within each episode and disappearance times of 3, 4 or 5 seconds. It prints a check of all of this. Paste its `episodes` list into a copy of `Degradation_A.json`.
+
+Not carried over from the branch: the earlier n-back and cooldown-style episode files (`nBack*.json`, `degShort.json`, `rampUpDown.json`, `High`/`LowComplexity.json`), which the branch's final code no longer ran, and the older generators. They are in the `archive/exp_degradation_coloured` tag.
 
 ## Dynamic tasks and abstraction
 

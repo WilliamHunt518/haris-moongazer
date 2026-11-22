@@ -115,6 +115,15 @@ App.Views.Map = Backbone.View.extend({
             UAVSelected: $.loadIcon("icons/used/uav_selected.png", "icons/plane.shadow.png", 30, 30),
             UAVTimedOut: $.loadIcon("icons/used/uav_timedout.png", "icons/plane.shadow.png", 30, 30),
             UAVMini: $.loadIcon("icons/used/uav_timedout_mini.png", "icons/plane.shadow.png", 30, 30),
+            // Colour-coded drones for the degradation study (agent marker "UAV-<colour>")
+            "UAV-blue": $.loadIcon("icons/used/uav-blue.png", "icons/plane.shadow.png", 30, 30),
+            "UAV-cyan": $.loadIcon("icons/used/uav-cyan.png", "icons/plane.shadow.png", 30, 30),
+            "UAV-green": $.loadIcon("icons/used/uav-green.png", "icons/plane.shadow.png", 30, 30),
+            "UAV-orange": $.loadIcon("icons/used/uav-orange.png", "icons/plane.shadow.png", 30, 30),
+            "UAV-pink": $.loadIcon("icons/used/uav-pink.png", "icons/plane.shadow.png", 30, 30),
+            "UAV-purple": $.loadIcon("icons/used/uav-purple.png", "icons/plane.shadow.png", 30, 30),
+            "UAV-red": $.loadIcon("icons/used/uav-red.png", "icons/plane.shadow.png", 30, 30),
+            "UAV-yellow": $.loadIcon("icons/used/uav-yellow.png", "icons/plane.shadow.png", 30, 30),
             Marker: $.loadIcon("icons/used/marker.png", "icons/msmarker.shadow.png", 10, 34),
             MarkerMonitor: $.loadIcon("icons/used/marker_monitor.png", "icons/msmarker.shadow.png", 10, 34),
             TargetHuman: $.loadIcon("icons/used/man.png", "icons/man.shadow.png", 30, 30),
@@ -408,42 +417,78 @@ App.Views.Map = Backbone.View.extend({
      * Draws persistent markers on the map for reference
      */
     drawMarkers: function () {
-        try {
-            var markers = this.state.getMarkers();
-            var self = this;
-            for (var i = 0; i < markers.length; i++) {
-                var thisMarker = markers[i];
-                var splitString = thisMarker.split(",")
-                if (splitString[0] === "circle") {
-                    var latX = splitString[1];
-                    var latY = splitString[2];
-                    var rad = splitString[3];
-                    var thisId = "circle" + latX + "," + latY + ", " + rad;
-                    var currentCircle = self.$el.gmap("get", "overlays > Circle", [])[thisId];
-
-                    if (!currentCircle) {
-                        self.$el.gmap("addShape", "Circle", {
-                            id: thisId,
-                            strokeColor: "#FF0000",
-                            strokeOpacity: 0.8,
-                            strokeWeight: 2,
-                            label: "Search here!",
-                            center: new google.maps.LatLng(latX, latY),
-                            radius: parseFloat(rad),
-                            visible: true
-                        });
-                    }
+        var self = this;
+        var markers = this.state.getMarkers() || [];
+        // Shape markers: "circle,lat,lng,radius", "textMarker,lat,lng,text" or "banner,background,textColour,text".
+        // Ids start with MK- so that markers the server no longer lists (e.g. from the last episode) can be removed.
+        var wanted = {};
+        var bannerTexts = [];
+        markers.forEach(function (m) {
+            var parts = m.split(",");
+            var shape = parts[0];
+            if (shape === "circle") {
+                var id = "MK-circle" + parts[1] + "," + parts[2] + "," + parts[3];
+                wanted[id] = true;
+                if (!self.$el.gmap("get", "overlays > Circle", [])[id]) {
+                    self.$el.gmap("addShape", "Circle", {
+                        id: id,
+                        strokeColor: "#FF0000",
+                        strokeOpacity: 0.8,
+                        strokeWeight: 2,
+                        center: new google.maps.LatLng(parseFloat(parts[1]), parseFloat(parts[2])),
+                        radius: parseFloat(parts[3]),
+                        clickable: false,
+                        visible: true
+                    });
                 }
-
+            } else if (shape === "textMarker") {
+                var text = parts.slice(3).join(",");
+                var tid = "MK-txt" + parts[1] + "," + parts[2] + "," + text;
+                wanted[tid] = true;
+                if (!self.$el.gmap("get", "markers", [])[tid]) {
+                    self.$el.gmap("addMarker", {
+                        bounds: false,
+                        draggable: false,
+                        clickable: false,
+                        icon: {path: google.maps.SymbolPath.CIRCLE, scale: 0},
+                        label: {text: text, color: "black", fontSize: "28px", fontWeight: "bold", className: "map-text-marker"},
+                        id: tid,
+                        position: new google.maps.LatLng(parseFloat(parts[1]), parseFloat(parts[2])),
+                        zIndex: 3
+                    });
+                }
+            } else if (shape === "banner") {
+                bannerTexts.push({bg: parts[1], fg: parts[2], text: parts.slice(3).join(",")});
             }
-        } catch (e) {
-            alert("Marker drawing error: " + e);
+        });
+
+        var mapMarkers = self.$el.gmap("get", "markers", []);
+        for (var mid in mapMarkers) {
+            if (mid.indexOf("MK-") === 0 && !wanted[mid]) {
+                mapMarkers[mid].setMap(null);
+                delete mapMarkers[mid];
+            }
+        }
+        var circles = self.$el.gmap("get", "overlays > Circle", []);
+        for (var cid in circles) {
+            if (cid.indexOf("MK-") === 0 && !wanted[cid]) {
+                circles[cid].setMap(null);
+                delete circles[cid];
+            }
         }
 
-        // Clumsy, just add manually if using shapes for now. infutue should be done in the same way as above
-        if (this.state.getMarkers().length > 0) {
-            var marker = self.$el.gmap("get", "markers", [])["testMk1"];
-            if (!marker) {
+        var container = $("#bannerContainer");
+        var key = JSON.stringify(bannerTexts);
+        if (container.data("key") !== key) {
+            container.data("key", key).empty();
+            bannerTexts.forEach(function (b) {
+                $("<div class='map-banner'></div>").text(b.text).css({background: b.bg, color: b.fg}).appendTo(container);
+            });
+        }
+
+        // The original tutorial's two fixed "casualties" labels, shown whenever its circle markers are on
+        if (markers.some(function (m) { return m.indexOf("circle,") === 0; }) && !this.state.get("episode")) {
+            if (!self.$el.gmap("get", "markers", [])["testMk1"]) {
                 this.$el.gmap("addMarker", {
                     bounds: false,
                     draggable: false,
@@ -458,8 +503,7 @@ App.Views.Map = Backbone.View.extend({
                     visible: true
                 });
             }
-            var marker = self.$el.gmap("get", "markers", [])["testMk2"];
-            if (!marker) {
+            if (!self.$el.gmap("get", "markers", [])["testMk2"]) {
                 this.$el.gmap("addMarker", {
                     bounds: false,
                     draggable: false,
@@ -652,6 +696,7 @@ App.Views.Map = Backbone.View.extend({
         });
     },
     updateAllocationRendering: function () {
+        if (this.state.get("episode")) return;  // Degradation study: the leader's far-off waypoint stays hidden
         // TODO fix (restore) the allocation renderings here
         if (MapController.isHeatmapMode()) {
             MapTaskController.heatmapTaskUpdateGeneric();
@@ -986,6 +1031,54 @@ App.Views.Map = Backbone.View.extend({
             this.views.control.trigger("update:agent", agent);
         }
     },
+    /**
+     * Swarm degradation study (scenario "episodes"): a fixed satellite view, a "drone disappeared" button (or Space),
+     * and the end-of-episode questionnaire. Driven by state.episode from EpisodeController.
+     */
+    updateEpisodePanel: function () {
+        var ep = this.state.get("episode");
+        var panel = $("#episode_panel");
+        var review = $("#episode_review");
+        if (!ep || !this.state.isInProgress()) {
+            panel.hide();
+            review.hide();
+            $("body").removeClass("episode-mode");
+            this.episodeLayoutDone = false;
+            return;
+        }
+        if (!this.episodeLayoutDone) {
+            this.episodeLayoutDone = true;
+            $("body").addClass("episode-mode");
+            var centre = this.state.getGameCentre();
+            this.map.setOptions({
+                mapTypeId: google.maps.MapTypeId.SATELLITE, draggable: false, scrollwheel: false,
+                disableDoubleClickZoom: true, zoomControl: false, keyboardShortcuts: false
+            });
+            this.map.setZoom(14);
+            if (centre) this.map.setCenter(new google.maps.LatLng(centre.latitude, centre.longitude));
+        }
+        if (ep.phase === "review") {
+            panel.hide();
+            if (!review.is(":visible")) {
+                review.find("input[type=radio]").prop("checked", false);
+                $("#episode_review_submit").prop("disabled", true);
+                review.show();
+            }
+        } else {
+            review.hide();
+            panel.toggle(ep.phase === "running");
+            if (this.lastEpisodeIndex !== ep.index) {
+                this.lastEpisodeIndex = ep.index;
+                $("#episode_report").prop("disabled", false).text("Drone disappeared (Space)");
+            }
+        }
+    },
+    reportDegradation: function () {
+        var ep = this.state.get("episode");
+        if (!ep || ep.phase !== "running") return;
+        $.post("/review/report/degradation", {status: true});
+        $("#episode_report").prop("disabled", true).text("Reported");
+    },
     /** Progressive-resolution scouting score (AAMAS 2023 demo), shown only when the scenario has scouting. */
     updateScoutPanel: function () {
         var s = this.state.get("scouting");
@@ -1124,8 +1217,8 @@ App.Views.SubMap = Backbone.View.extend({
                     bounds: false,
                     position: model.getPosition(),
                     heading: model.getHeading(),
-                    icon: App.Resources.Icons.UAV.Image,
-                    shadow: App.Resources.Icons.UAV.Shadow
+                    icon: self.icons.UAV.Image,
+                    shadow: self.icons.UAV.Shadow
                 });
                 self.map.setCenter(model.getPosition());
                 self.map.setZoom(19);

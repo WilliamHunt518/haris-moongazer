@@ -121,6 +121,7 @@
 
 <!-- Map Panel -->
 <div class="ui-layout-center">
+    <div id="bannerContainer"></div>
     <div id="map_canvas"></div>
     <div id="review_panel" style="display: none">
         <button type="button" id="rev_false" class="rev_buttons">No Casualty</button>
@@ -136,6 +137,11 @@
     </div>
     <div id="image_review" style="display: none;">
         <canvas id="image_review_canvas" style="display:inline-block;"></canvas>
+    </div>
+    <!-- Swarm degradation study (scenario "episodes"); shown by MapView.updateEpisodePanel -->
+    <div id="episode_panel" style="display: none;">
+        <div>Press <b>Space</b> as soon as a drone disappears.</div>
+        <button type="button" id="episode_report">Drone disappeared (Space)</button>
     </div>
     <!-- Progressive-resolution scouting score (AAMAS 2023 demo); shown by MapView.updateScoutPanel -->
     <div id="scout_score" style="display: none; position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 5;
@@ -767,5 +773,31 @@
     </form>
 </div>
 
+<!-- Degradation study questionnaire, over the whole page -->
+    <div id="episode_review" style="display: none;">
+        <div class="episode_review_card">
+            <h3>How mentally demanding was it?</h3>
+            <div class="episode_scale"><span class="episode_scale_end">Very low</span>
+                <label><input type="radio" name="ep_workload" value="1"><span>1</span></label>
+                <label><input type="radio" name="ep_workload" value="2"><span>2</span></label>
+                <label><input type="radio" name="ep_workload" value="3"><span>3</span></label>
+                <label><input type="radio" name="ep_workload" value="4"><span>4</span></label>
+                <label><input type="radio" name="ep_workload" value="5"><span>5</span></label>
+                <label><input type="radio" name="ep_workload" value="6"><span>6</span></label>
+                <label><input type="radio" name="ep_workload" value="7"><span>7</span></label>
+                <span class="episode_scale_end">Very high</span></div>
+            <h3>How confident are you that you were correct?</h3>
+            <div class="episode_scale"><span class="episode_scale_end">Not at all</span>
+                <label><input type="radio" name="ep_performance" value="1"><span>1</span></label>
+                <label><input type="radio" name="ep_performance" value="2"><span>2</span></label>
+                <label><input type="radio" name="ep_performance" value="3"><span>3</span></label>
+                <label><input type="radio" name="ep_performance" value="4"><span>4</span></label>
+                <label><input type="radio" name="ep_performance" value="5"><span>5</span></label>
+                <label><input type="radio" name="ep_performance" value="6"><span>6</span></label>
+                <label><input type="radio" name="ep_performance" value="7"><span>7</span></label>
+                <span class="episode_scale_end">Completely</span></div>
+            <button type="button" id="episode_review_submit" disabled>Continue</button>
+        </div>
+    </div>
 </body>
 </html>

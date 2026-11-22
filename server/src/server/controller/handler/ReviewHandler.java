@@ -34,6 +34,14 @@ public class ReviewHandler extends RestHandler {
             case "/report/workload":
                 handleReportWorkload(req, resp);
                 break;
+            case "/report/degradation":
+                // Degradation study: the participant reports that a drone disappeared
+                this.simulator.getEpisodeController().press();
+                resp.sendOkay();
+                break;
+            case "/report/episode":
+                handleReportEpisode(req, resp);
+                break;
             default:
                 throw new UnregisteredPathException("No method for handling POST request on " + req.getPath());
         }
@@ -67,6 +75,25 @@ public class ReviewHandler extends RestHandler {
         } else if (params.containsKey("priority")) {
             int prio = Integer.parseInt(params.get("priority"));
             this.simulator.getImageController().classifyWithPrio(ref, prio);
+        }
+    }
+
+    /** Degradation study questionnaire: workload (mental demand) and performance (confidence), each 1 to 7. */
+    private void handleReportEpisode(Request req, Response resp) throws IOException {
+        Map<String, String> params = req.getParams();
+        if (!checkParams(params, List.of("workload", "performance"), resp))
+            return;
+        try {
+            int workload = Integer.parseInt(params.get("workload"));
+            int performance = Integer.parseInt(params.get("performance"));
+            if (workload < 1 || workload > 7 || performance < 1 || performance > 7) {
+                resp.send(400, "workload and performance must be 1 to 7");
+                return;
+            }
+            this.simulator.getEpisodeController().submitReview(workload, performance);
+            resp.sendOkay();
+        } catch (NumberFormatException e) {
+            resp.send(400, "workload and performance must be whole numbers");
         }
     }
 

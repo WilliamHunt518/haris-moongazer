@@ -49,7 +49,7 @@ The server is plain Java 21 with two dependencies (Gson and, for the legacy real
 | Package | Contents |
 |---|---|
 | `server` | `Simulator` (entry point, main loop, scenario loading, timing), `Allocator`, `ModelCaller` and the older `Modeller` |
-| `server.controller` | One controller per part of the state: `AgentController`, `TaskController`, `TargetController`, `HazardController`, `ImageController` (scan images), `MissionController` (dynamic task spawning), `ScoreController`. `ConnectionController` sets up the HTTP server and the REST handlers. |
+| `server.controller` | One controller per part of the state: `AgentController`, `TaskController`, `TargetController`, `HazardController`, `ImageController` (scan images), `MissionController` (dynamic task spawning), `ScoreController`, `ScoutingController` (the AAMAS 2023 scouting demo), `EpisodeController` (the swarm degradation study, with `EpisodeRecorder` for optional screen clips; LSL markers are in the `lsl` package). `ConnectionController` sets up the HTTP server and the REST handlers. |
 | `server.controller.handler` | One REST handler per URL prefix (`/agents`, `/tasks`, `/allocation`, `/mode`, `/review`, `/ui`, ...), built on `RestHandler`. See the [REST API](api.md). |
 | `server.model` | `State` and the model classes: `agents`, `task`, `target`, `hazard` |
 | `server.model.agents.policies` | Drone programmer policies |
