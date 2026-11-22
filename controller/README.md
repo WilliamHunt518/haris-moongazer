@@ -1,3 +1,5 @@
+> **Legacy, not maintained.** This is the original HutSim Android app that connected real DJI drones to the server over RabbitMQ (University of Southampton, 2018). HARIS Moongazer does not build or use it, and the steps below refer to services that no longer exist. It is kept for later. See [real drones and manual control](../docs/legacy/real-drones.md) for how it fitted in and what reviving it would take, and the [project README](../README.md) for the simulator.
+
 ## DJI Hut Controller - Documentation
 ### University of Southampton
 ------

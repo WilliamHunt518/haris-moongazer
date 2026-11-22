@@ -14,6 +14,7 @@ COPY web ./web
 COPY logging.properties loggingForStudy.properties ./
 RUN mkdir -p log
 EXPOSE 44101
-# Optional: mount a Linux PRISM 4.8 install and set PRISM_HOME for the prediction features.
+# Optional: mount a Linux PRISM 4.8 install and set JAVA_OPTS=-Dprism.home=<mount point> for the prediction
+# features (the start script reads JAVA_OPTS, not PRISM_HOME). See docs/getting-started.md.
 ENV JAVA_OPTS=""
 CMD ["/opt/haris/bin/haris-moongazer"]
