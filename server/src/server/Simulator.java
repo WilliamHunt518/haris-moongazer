@@ -710,6 +710,7 @@ public class Simulator {
                 List<String> possibleMethods = new ArrayList<>(Arrays.asList(
                         "random",
                         "maxsum",
+                        "maxsumsaturated",
                         "maxsumwithoverspill",
                         "bestfirst",
                         "basicbundle",
@@ -745,6 +746,15 @@ public class Simulator {
                     LOGGER.warning("Allocation style: '" + allocationStyle + "' not valid. Set to 'manualwithstop'.");
                     // state.allocationMethod initialised with default value of 'maxsum'
                 }
+            }
+
+            if (GsonUtils.hasKey(obj, "taskGroupSize")) {
+                Object taskGroupSize = GsonUtils.getValue(obj, "taskGroupSize");
+                this.state.setTaskGroupSize(((Double) taskGroupSize).intValue());
+            }
+
+            if (GsonUtils.hasKey(obj, "regionCoverage")) {
+                this.state.setRegionCoverage(Boolean.TRUE.equals(GsonUtils.getValue(obj, "regionCoverage")));
             }
 
             if(GsonUtils.hasKey(obj,"flockingEnabled")){

@@ -96,6 +96,7 @@ public class Allocator {
         } else {
             switch (allocationMethod) {
                 case "maxsum" -> allocation = compute(agentsToAllocate, tasksToAllocate, simulator.getState().getEditMode() == 2);
+                case "maxsumsaturated" -> allocation = computeSaturated(agentsToAllocate, tasksToAllocate);
                 case "maxsumwithoverspill" -> allocation = computeWithRandomOverspil(agentsToAllocate, tasksToAllocate, simulator.getState().getEditMode() == 2);
                 case "random" -> allocation = randomCompute(agentsToAllocate, tasksToAllocate, simulator.getState().getEditMode() == 2);
                 case "bestfirst" -> allocation = bestFirstCompute(agentsToAllocate, tasksToAllocate, simulator.getState().getEditMode() == 2);
@@ -707,6 +708,78 @@ public class Allocator {
     }
 
 
+
+    /**
+     * "maxsumsaturated": spreads every free agent over the tasks instead of one agent per task.
+     * See {@link #runMaxSumSaturated}.
+     */
+    protected Map<String, String> computeSaturated(List<Agent> agents, List<Task> tasks) {
+        if (!agents.isEmpty() && !tasks.isEmpty()) {
+            Map<String, String> result = runMaxSumSaturated(agents, tasks);
+            oldresult = result;
+            return result;
+        }
+        return null;
+    }
+
+    /**
+     * Saturated allocation (Will Hunt, Jan 2025, from the dev_RM branch). Each task first gets one agent, then the
+     * remaining agents go to the tasks that are furthest below their share, where a task's share is proportional to
+     * its length: the route length of a patrol or region, or the distance from the hub for a point task.
+     * Pair it with {@code taskGroupSize} in the scenario so that patrol and region tasks accept more than one agent.
+     */
+    protected Map<String, String> runMaxSumSaturated(List<Agent> agents, List<Task> tasks) {
+        Map<String, String> result = new HashMap<>();
+        for (Task task : tasks) {
+            task.clearAgents();
+        }
+
+        // Weight each task by its length, normalised over all tasks
+        Map<Task, Double> taskWeights = new HashMap<>();
+        double totalPathLength = 0.0;
+        for (Task task : tasks) {
+            double pathLength;
+            if (task instanceof PatrolTask patrolTask) {  // includes RegionTask
+                pathLength = patrolTask.getRouteLength();
+            } else {
+                pathLength = task.getCoordinate().getDistance(simulator.getState().getHubLocation());
+            }
+            taskWeights.put(task, pathLength);
+            totalPathLength += pathLength;
+        }
+        for (Map.Entry<Task, Double> entry : taskWeights.entrySet()) {
+            entry.setValue(totalPathLength > 0 ? entry.getValue() / totalPathLength : 1.0 / tasks.size());
+        }
+
+        // At least one agent per task, while agents last
+        List<Agent> unassignedAgents = new ArrayList<>(agents);
+        for (Task task : tasks) {
+            if (unassignedAgents.isEmpty()) break;
+            Agent agent = unassignedAgents.remove(0);
+            task.addAgent(agent);
+            result.put(agent.getId(), task.getId());
+        }
+
+        // The rest go to the task with the greatest unmet share
+        while (!unassignedAgents.isEmpty()) {
+            Agent agent = unassignedAgents.remove(0);
+            Task bestTask = null;
+            double maxPriority = Double.NEGATIVE_INFINITY;
+            for (Task task : tasks) {
+                int proportionalAgents = (int) Math.ceil(taskWeights.get(task) * agents.size());
+                double priority = proportionalAgents - task.getAgents().size();
+                if (priority > maxPriority) {
+                    maxPriority = priority;
+                    bestTask = task;
+                }
+            }
+            if (bestTask != null) {
+                bestTask.addAgent(agent);
+                result.put(agent.getId(), bestTask.getId());
+            }
+        }
+        return result;
+    }
 
     protected Map<String, String> runMaxSum(List<Agent> agents, List<Task> tasks) throws IndexOutOfBoundsException {
         MaxSum maxsum = new MaxSum();

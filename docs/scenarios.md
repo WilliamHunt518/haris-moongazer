@@ -121,7 +121,9 @@ Shapes drawn on the map for context, such as a search area.
 
 | Field | Values | Default | Meaning |
 |---|---|---|---|
-| `allocationMethod` | `maxsum`, `random`, `maxsumwithoverspill`, `bestfirst`, `basicbundle`, `heuristicbundle`, `cbaa`, `cbba`, `cbbacoverage` | `maxsum` | The planner behind auto-allocation. An unknown value falls back to `maxsum` with a warning. |
+| `allocationMethod` | `maxsum`, `maxsumsaturated`, `random`, `maxsumwithoverspill`, `bestfirst`, `basicbundle`, `heuristicbundle`, `cbaa`, `cbba`, `cbbacoverage` | `maxsum` | The planner behind auto-allocation. An unknown value falls back to `maxsum` with a warning. |
+| `taskGroupSize` | integer | none | Maximum agents per patrol or region task created during the mission. Use it with `maxsumsaturated`, which puts every free agent to work, sharing them between tasks in proportion to each task's length. |
+| `regionCoverage` | boolean | `false` | Region tasks are split between their agents, starting at evenly spaced points along the sweep, and complete once every point has been swept. Without it a region is patrolled until the operator removes it. Example: `Testing/SaturatedRegions.json`. |
 | `allocationStyle` | `manual`, `manualwithstop`, `dynamic`, `bundle` | `manualwithstop` | How much the operator controls. `manual`: the operator assigns or confirms, and agents keep moving while they edit. `manualwithstop`: the same, but agents hold position in edit mode. `dynamic`: free agents take the next task themselves. `bundle`: agents are allocated bundles of tasks. |
 | `flockingEnabled` | boolean | false | Agents without a task follow their neighbours' average speed and heading, instead of stopping. |
 | `deepAllowed` | boolean | false | Lets the operator request deep (high-resolution) scans. |

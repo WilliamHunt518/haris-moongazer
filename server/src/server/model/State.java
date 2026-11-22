@@ -37,6 +37,8 @@ public class State {
     private String allocationMethod;
     private String allocationStyle;
     private String modelStyle;
+    private Integer taskGroupSize;      // Max agents per new patrol/region task (scenario "taskGroupSize"); null keeps the default
+    private boolean regionCoverage;     // Scenario "regionCoverage": regions are split between agents and complete when swept
     private Boolean flockingEnabled;
     private double time;
     private Integer timeLimit;
@@ -167,6 +169,8 @@ public class State {
         gameCentre = null;
         userName = "";
         modelStyle = "off";
+        taskGroupSize = null;
+        regionCoverage = false;
         showReviewPanel = false;
         workloadLevel = 3;
 
@@ -399,6 +403,22 @@ public class State {
 
     public void setAllocationStyle(String allocationStyle) {
         this.allocationStyle = allocationStyle;
+    }
+
+    public synchronized void setTaskGroupSize(Integer taskGroupSize) {
+        this.taskGroupSize = taskGroupSize;
+    }
+
+    public Integer getTaskGroupSize() {
+        return taskGroupSize;
+    }
+
+    public synchronized void setRegionCoverage(boolean regionCoverage) {
+        this.regionCoverage = regionCoverage;
+    }
+
+    public boolean isRegionCoverage() {
+        return regionCoverage;
     }
 
     public String getModelStyle() {

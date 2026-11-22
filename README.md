@@ -115,4 +115,4 @@ Contributors: Ashley Pare (random allocation, flocking, time limits), Ayodeji Ab
 
 ## Licence
 
-No licence has been chosen for this repository yet. Until one is added, please contact the authors before reusing the code.
+HARIS is released under the [MIT License](LICENSE), copyright (c) 2022 Mohammad D. Soorati, as on the original repository.

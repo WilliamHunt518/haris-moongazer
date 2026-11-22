@@ -83,7 +83,7 @@ An allocation maps each agent to at most one task; several agents can share a ta
 
 Dragging from an agent to a task (`POST /allocation/allocate`) or pressing auto-allocate (`POST /allocation/auto-allocate`) changes the temporary allocation. Confirming (`POST /allocation/confirm`) copies it to the main allocation, and the agents set off.
 
-`Allocator` runs the planner named by the scenario's `allocationMethod` (MaxSum by default; also random, MaxSum with overspill, best-first, basic and heuristic bundles, CBAA, CBBA and CBBA coverage). The algorithms live in their own packages so another planner can be added without touching the rest of the server.
+`Allocator` runs the planner named by the scenario's `allocationMethod` (MaxSum by default; also saturated MaxSum, random, MaxSum with overspill, best-first, basic and heuristic bundles, CBAA, CBBA and CBBA coverage). The algorithms live in their own packages so another planner can be added without touching the rest of the server.
 
 `allocationStyle` sets how much of this the operator does. With `manual` and `manualwithstop` the operator assigns or confirms (with `manualwithstop`, agents hold position while the operator edits). With `dynamic`, free agents are given the next task automatically, and the operator can still intervene. The heatmap interface adds `POST /allocation/groupAllocate`, which assigns a cluster of agents to a cluster of tasks at once.
 
