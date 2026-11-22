@@ -26,7 +26,7 @@ public class MissionController extends AbstractController {
 
     public void spawnIfRequired(double time) {
         // Weird interaction around the timescale. For now I'm using a manual hacky workaround
-        if (spawnPairs != null && spawnPairs.get(0)[0] <= time) {
+        if (spawnPairs != null && !spawnPairs.isEmpty() && spawnPairs.get(0)[0] <= time) {
             taskSpawnRate = spawnPairs.get(0)[1];
             System.out.println("Updating to " + taskSpawnRate);
             if (spawnPairs.size() > 1) {

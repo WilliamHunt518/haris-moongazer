@@ -230,6 +230,20 @@ Lists the interface features for each of the five workload slider levels, keyed 
 }
 ```
 
+### `heatmapUI`
+
+Chooses which heatmap allocation interface the `"heatmap"` feature uses. Each spawn batch from the `missionController` is one task group, called a mission in the interface.
+
+| Value | Interface |
+|---|---|
+| `"dynamic"` (default) | The original heatmap. Agents and tasks are grouped by distance as they move, and the operator drags an agent cluster onto a task cluster. Scenarios without `heatmapUI` use it, so older study files run as before. |
+| `"teams"` | The 2024 version from the `exp_fastpi` branch. Agents are put in fixed teams when the scenario loads, each team and each mission has its own heatmap and marker, and the operator drags an `AgentGroup` marker onto a `TaskGroup` marker. |
+| `"lens"` | The allocation lens. Same teams and missions as `"teams"`, but each team has a colour and a letter that its heatmap, badge, arrows and covered tasks share. Each mission badge shows one pip per task (covered, queued or not covered). Arrow width is the number of drones going to that mission. Dragging a team snaps to the nearest mission and previews the outcome. The drop takes effect at once and can be undone. An allocation board beside the map shows the same information and takes the same drags. Hovering a team or mission shows which drone is on which task. Under the Classic look a `"lens"` scenario uses `"teams"` instead. |
+
+`heatmapTeamSize` (number, default 3) sets the team size for `"teams"` and `"lens"`. Teams are formed from each agent and its nearest ungrouped neighbours, in scenario order. These two modes also spawn tighter batches that keep clear of other batches' tasks, as in the 2024 study. The examples are in `scenarios/Heatmap/`.
+
+In the lens, a team dropped on a mission first takes the tasks that no other team covers, nearest drone first. If the mission has more tasks than the team has drones, the rest are queued on the nearest drone. Spare drones help on the tasks with the fewest drones. Dropping a team on "Teams without a mission" releases it.
+
 ## Session flow and logging
 
 | Field | Type | Meaning |

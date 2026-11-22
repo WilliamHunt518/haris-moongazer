@@ -69,7 +69,8 @@ public abstract class Task extends MObject implements Serializable {
     abstract boolean perform();
 
     public void complete() {
-        for (Agent a : agents) {
+        // Iterate over a copy: confirming a queued task below clears every task's agent list, this one included
+        for (Agent a : new ArrayList<>(agents)) {
             if (a instanceof AgentVirtual av) {
                 Task t = av.getNextTaskFromQueue();
                 if (t != null) {

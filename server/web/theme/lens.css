@@ -46,7 +46,7 @@ body.lens-dragging, body.lens-dragging * { cursor: grabbing !important; }
     border: 1px solid #a9c0c8; border-radius: 8px; padding: 7px 10px; font: 13px/1.4 "Segoe UI", system-ui, sans-serif; box-shadow: 0 6px 18px rgba(0,0,0,.18); }
 
 /* Undo toast */
-.lens-toast { margin-top: 10px; display: flex; gap: 12px; align-items: center; background: #133d5b; color: #fff; padding: 7px 8px 7px 14px;
+.lens-toast { margin-bottom: 14px; display: flex; gap: 12px; align-items: center; background: #133d5b; color: #fff; padding: 7px 8px 7px 14px;
     border-radius: 8px; font: 13px "Segoe UI", system-ui, sans-serif; box-shadow: 0 6px 20px rgba(0,0,0,.25); }
 .lens-toast[hidden], .lens-preview[hidden], .lens-board-body[hidden], .lens-toast button[hidden] { display: none; }
 .lens-toast button { font: 600 12px "Segoe UI", system-ui, sans-serif; color: #fff; background: transparent; border: 1px solid #fff; border-radius: 6px; padding: 3px 10px; cursor: pointer; }

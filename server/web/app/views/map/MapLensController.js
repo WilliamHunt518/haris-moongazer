@@ -172,7 +172,7 @@ var MapLensController = {
         self.toast.hidden = true;
         self.toast.innerHTML = '<span class="lens-toast-text"></span><button type="button">Undo</button>';
         self.toast.querySelector("button").addEventListener("click", self.undo);
-        map.controls[google.maps.ControlPosition.TOP_CENTER].push(self.toast);
+        map.controls[google.maps.ControlPosition.BOTTOM_CENTER].push(self.toast);
 
         self.preview = document.createElement("div");
         self.preview.className = "lens-preview";
@@ -673,7 +673,7 @@ var MapLensController = {
         self.overlay = null;
         if (self.board && self.view && self.view.map) {
             [self.board, self.toast].forEach(function (el) {
-                ["RIGHT_TOP", "TOP_CENTER"].forEach(function (pos) {
+                ["RIGHT_TOP", "BOTTOM_CENTER"].forEach(function (pos) {
                     var arr = self.view.map.controls[google.maps.ControlPosition[pos]];
                     for (var i = arr.getLength() - 1; i >= 0; i--) if (arr.getAt(i) === el) arr.removeAt(i);
                 });

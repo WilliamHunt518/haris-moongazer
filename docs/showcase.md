@@ -36,7 +36,7 @@ The three study conditions differ only in their prediction settings. Live estima
 
 ### Adaptive abstraction
 
-*Heatmaps that reduce operator workload.* A high-workload mission where agents and tasks are drawn as cluster heatmaps instead of individual markers. Drag a cluster of agents onto a cluster of tasks and HARIS turns that into individual assignments. In the full study a five-level slider moved between individual and abstract views, and workload was measured with fNIRS. File: `CurrentNonFixed/DynamicTaskingShiftHeatmap.json`. From: Abioye, Landowska, Hunt et al., 2024.
+*Heatmaps that reduce operator workload.* A high-workload mission where agents and tasks are drawn as cluster heatmaps instead of individual markers. Drag a cluster of agents onto a cluster of tasks and HARIS turns that into individual assignments. In the full study a five-level slider moved between individual and abstract views, and workload was measured with fNIRS. The tile has three variants: the allocation lens (`Heatmap/AllocationLens.json`), where each team has a colour and each mission shows which of its tasks are covered; the 2024 fixed-team version (`Heatmap/FixedTeams.json`); and the original study file (`CurrentNonFixed/DynamicTaskingShiftHeatmap.json`). From: Abioye, Landowska, Hunt et al., 2024.
 
 ### Sandbox
 

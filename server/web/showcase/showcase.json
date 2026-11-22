@@ -61,9 +61,14 @@
       "id": "heatmap",
       "title": "Adaptive abstraction",
       "showcasing": "Heatmaps that reduce operator workload",
-      "description": "A high-workload mission where agents and tasks are drawn as heatmaps instead of individual markers. Drag a cluster of agents onto a cluster of tasks to assign them.",
+      "description": "A high-workload mission where agents and tasks are drawn as heatmaps instead of individual markers. Each team has its own colour, and each mission shows which of its tasks are covered. Drag a team onto a mission to send it there.",
       "image": "showcase/img/heat5.webp",
-      "file": "CurrentNonFixed/DynamicTaskingShiftHeatmap.json",
+      "file": "Heatmap/AllocationLens.json",
+      "variants": [
+        {"label": "Allocation lens", "file": "Heatmap/AllocationLens.json"},
+        {"label": "Fixed teams (2024)", "file": "Heatmap/FixedTeams.json"},
+        {"label": "Original study", "file": "CurrentNonFixed/DynamicTaskingShiftHeatmap.json"}
+      ],
       "papers": [
         {"cite": "Abioye, Landowska, Hunt et al.", "venue": "arXiv (fNIRS workload study)", "year": 2024}
       ]

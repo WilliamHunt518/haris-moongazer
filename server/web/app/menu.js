@@ -176,6 +176,11 @@ function menuInit() {
         var hideUnrecorded = function () {
             if (!recordingsLoaded) return;
             $(".mg-chip").each(function () { $(this).prop("hidden", !recordings[$(this).data("file")]); });
+            // If a tile's default variant has no recording, select one that does
+            $(".mg-tile").each(function () {
+                var pressed = $(this).find('.mg-chip[aria-pressed="true"]');
+                if (pressed.length && pressed.prop("hidden")) $(this).find(".mg-chip:not([hidden])").first().trigger("click");
+            });
         };
         var recordingsLoaded = false;
         $.getJSON("replays/index.json", function (data) {

@@ -100,7 +100,7 @@
     "taskSpawnTrack": [
       {
         "spawnTime": 0,
-        "spawnRate": 12
+        "spawnRate": 24
       }
     ]
   }

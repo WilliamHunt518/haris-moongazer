@@ -1336,9 +1336,11 @@ public class Allocator {
             team.stream().min(Comparator.comparingDouble(a -> a.getCoordinate().getDistance(t.getCoordinate())))
                     .ifPresent(a -> { queueTask(a, t); pairs.add(a.getId() + "+" + t.getId()); });
         }
-        // More drones than tasks: spare drones help on their nearest task
+        // More drones than tasks: spare drones help, on the least-helped task first, then the nearest
         for (Agent a : pool) {
-            tasks.stream().min(Comparator.comparingDouble(t -> a.getCoordinate().getDistance(t.getCoordinate())))
+            Map<String, String> now = simulator.getState().getTempAllocation();
+            tasks.stream().min(Comparator.<Task>comparingLong(t -> now.values().stream().filter(v -> v.equals(t.getId())).count())
+                            .thenComparingDouble(t -> a.getCoordinate().getDistance(t.getCoordinate())))
                     .ifPresent(t -> { putInTempAllocation(a.getId(), t.getId(), false); pairs.add(a.getId() + "=" + t.getId()); });
         }
         confirmAllocation(simulator.getState().getTempAllocation());

@@ -1,6 +1,18 @@
 {
  "replays": [
   {
+   "id": "heatmap-lens",
+   "file": "Heatmap/AllocationLens.json",
+   "title": "Heatmap: allocation lens",
+   "duration": 180.45
+  },
+  {
+   "id": "heatmap-teams",
+   "file": "Heatmap/FixedTeams.json",
+   "title": "Heatmap: fixed teams (exp_fastpi)",
+   "duration": 180.55
+  },
+  {
    "id": "heatmap",
    "file": "CurrentNonFixed/DynamicTaskingShiftHeatmap.json",
    "title": "Dynamic High (HEATMAP)",
