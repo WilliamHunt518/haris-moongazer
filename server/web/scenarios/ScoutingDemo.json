@@ -1,25 +1,14 @@
 {
   "gameId": "Progressive-Resolution Scouting",
-  "gameDescription": "Twelve possible casualties have been reported on Southampton Common, and your five drones are already on their way. Each image starts blurred and sharpens as a drone gets closer. Classify a target yourself as soon as you are sure (Casualty Present or No Casualty in the review panel), and that drone moves on to the next one. Any target you leave is classified by the drone when it arrives, but the drones are right only 80% of the time. You have 90 seconds: score = correct finds per minute x accuracy x 100.",
+  "gameDescription": "Twelve possible casualties have been reported on Southampton Common, and your five drones are already on their way. Click a target's question mark to see its image: it starts blurred and sharpens as a drone gets closer. Choose Casualty or No Casualty as soon as you are sure, and that drone moves on to the next target. Any target you leave is classified by the drone when it arrives, but the drones are right only 80% of the time. You have 90 seconds: score = correct finds per minute x accuracy x 100.",
   "comment": "AAMAS 2023 demo (Hunt et al., Demonstrating Performance Benefits of Human-Swarm Teaming), ported from the exp_ai_demo branch's LKXR.json.",
   "uIOptions": [
     {
       "name": "monitor",
       "default": true,
       "toggleable": true
-    },
-    {
-      "name": "reviewPanel",
-      "default": true,
-      "toggleable": true
-    },
-    {
-      "name": "scanButtons",
-      "default": true,
-      "toggleable": true
     }
   ],
-  "reviewPanel": true,
   "deepAllowed": false,
   "uncertaintyRadius": 20.0,
   "timeLimitSeconds": 90,

@@ -24,6 +24,8 @@ var MapTargetController = {
         this.placeEmptyTargetMarker = _.bind(this.placeEmptyTargetMarker, context);
         this.placeEmptyTargetMarkerByPrio = _.bind(this.placeEmptyTargetMarkerByPrio, context);
         this.checkIcon = _.bind(this.checkIcon, context);
+        this.openScoutPopup = _.bind(this.openScoutPopup, context);
+        this.drawScoutImage = _.bind(this.drawScoutImage, context);
     },
     bindEvents: function () {
         this.state.targets.on("add", function (target) {
@@ -36,6 +38,11 @@ var MapTargetController = {
         // Scouting: a drone classified this target on arrival, so mark it as the operator's own decisions are marked
         var mapView = this;
         this.state.targets.on("remove", function (target) {
+            // AAMAS demo: a drone classified the target whose popup is open, so close it
+            if (MapTargetController.scoutPopupTarget && MapTargetController.scoutPopupTarget.getId() === target.getId()) {
+                MapTargetController.scoutPopupTarget = null;
+                mapView.$el.gmap("closeInfoWindow");
+            }
             // Deferred: the state's other attributes (with the scouting results) are set after the targets update
             setTimeout(function () {
                 var scouting = mapView.state.get("scouting");
@@ -46,6 +53,11 @@ var MapTargetController = {
                     MapTargetController.placeEmptyTargetMarker(target.getPosition(), target.getId(), result.status);
                 }
             }, 0);
+        });
+        // AAMAS demo: keep the open popup's image in step with its target's resolution
+        this.state.targets.on("change:resolutionLevel", function (target) {
+            if (MapTargetController.scoutPopupTarget && MapTargetController.scoutPopupTarget.getId() === target.getId())
+                MapTargetController.drawScoutImage(target);
         });
         $('#lens_target_toggle').change(function () {
             MapTargetController.updateTargetVisibility($(this).is(":checked"));
@@ -84,6 +96,10 @@ var MapTargetController = {
         MapTargetController.updateTargetMarkerVisibility(target);
     },
     openScanWindow : function (target, marker) {
+        if (this.state.get("scouting")) {
+            MapTargetController.openScoutPopup(target, marker);
+            return;
+        }
         try {
             self = this;
             this.$el.gmap("openInfoWindow", {minWidth: 300}, null, function (iw) {
@@ -146,6 +162,61 @@ var MapTargetController = {
         } catch (e) {
             alert("Scan window error: " + e)
         }
+    },
+    /**
+     * AAMAS 2023 demo (exp_ai_demo): clicking a target opens a popup on the map with its current image, which sharpens
+     * live as a drone closes in, and Casualty / No Casualty buttons so the operator can decide before the drone arrives.
+     */
+    openScoutPopup: function (target, marker) {
+        var self = this;
+        if (MapTargetController.classifiedIds.includes(target.getId())) return;
+        this.$el.gmap("openInfoWindow", {minWidth: 490}, null, function (iw) {
+            var property = document.createElement("div");
+            property.innerHTML = _.template($("#target_scout_popup").html(), {});
+            google.maps.event.addListener(iw, 'domready', function () {
+                MapTargetController.drawScoutImage(target);
+            });
+            google.maps.event.addListener(iw, 'closeclick', function () {
+                MapTargetController.scoutPopupTarget = null;
+            });
+            $(property).on("click", "#decide_casualty, #decide_no_casualty", function () {
+                var status = this.id === "decide_casualty";
+                var id = target.getId();
+                if (!MapTargetController.classifiedIds.includes(id)) {
+                    MapTargetController.classifiedIds.push(id);
+                    var ref = (self.state.getStoredImages() || {})[id];
+                    if (ref) $.post("/review/classify", {ref: ref, status: status});
+                }
+                MapTargetController.clearReviewedTarget(marker);
+                MapTargetController.placeEmptyTargetMarker(target.getPosition(), id, status);
+                MapTargetController.scoutPopupTarget = null;
+                self.$el.gmap("closeInfoWindow");
+            });
+            iw.setContent(property);
+            iw.setPosition(target.getPosition());
+            MapTargetController.scoutPopupTarget = target;
+            self.views.clickedTarget = target;
+        });
+    },
+    /** Draws the target's image blurred to its resolution level (the demo's level images were ~2/3 px of blur per level at 1920 px). */
+    drawScoutImage: function (target) {
+        var canvas = document.getElementById("scout_popup_canvas");
+        if (!canvas) return;
+        var ref = (this.state.getStoredImages() || {})[target.getId()];
+        if (!ref) return;
+        var level = target.get("resolutionLevel") || 0;
+        var ctx = canvas.getContext("2d");
+        var img = new Image();
+        img.onload = function () {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.filter = level > 0 ? "blur(" + (level * 0.67 * canvas.width / 1920).toFixed(2) + "px)" : "none";
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            ctx.filter = "none";
+            ctx.lineWidth = 3;
+            ctx.strokeRect(0, 0, canvas.width, canvas.height);
+            $("#scout_popup_level").text(level === 0 ? "Full resolution" : "Resolution level " + level + " of 9: sharpens as a drone gets closer");
+        };
+        img.src = ref;
     },
     checkIcon : function (targetId) {
         if (MapTargetController.classifiedIds.includes(targetId)) {

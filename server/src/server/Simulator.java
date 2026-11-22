@@ -393,8 +393,9 @@ public class Simulator {
             //this.state.decayHazardHits();
 
             // Check and trigger images that are scheduled
-            //if (state.isShowReviewPanel()) {
-            if (state.UIOptionIsAvailable("reviewPanel")) {
+            // The review panel is on through the uIOptions entry or, in older study files such as the resolution study,
+            // through the top-level "reviewPanel": true
+            if (state.UIOptionIsAvailable("reviewPanel") || state.isShowReviewPanel()) {
                 imageController.checkForImages();
             }
             scoutingController.step();

@@ -1085,3 +1085,10 @@ body.episode-mode #game_info, body.episode-mode #accordion_smallview { display: 
 .episode_scale_end { font-size: 13px; opacity: .7; }
 #episode_review_submit { margin-top: 16px; padding: 8px 22px; font: 600 15px sans-serif; border: 0; border-radius: 6px; background: #01386a; color: #fff; cursor: pointer; }
 #episode_review_submit:disabled { opacity: .4; cursor: default; }
+
+/* AAMAS 2023 demo: Casualty / No Casualty buttons in the target popup (colours as in exp_ai_demo) */
+.side-by-side-buttons { flex: 1; height: 36px; border: 1px solid #000; border-radius: 4px; font: bold 15px arial, helvetica, sans-serif; color: #fff; cursor: pointer; text-shadow: -1px -1px 0 rgba(0,0,0,0.3); }
+#decide_casualty { background: linear-gradient(#3093c7, #1c5a85); }
+#decide_casualty:hover { background: linear-gradient(#26759e, #133d5b); }
+#decide_no_casualty { background: linear-gradient(#f60000, #943e3e); }
+#decide_no_casualty:hover { background: linear-gradient(#861c1c, #943e3e); }
