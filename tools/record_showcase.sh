@@ -14,7 +14,8 @@ PFM_SFV.json|pfm-live-prism|240|none|1
 PFM_SDV.json|pfm-placebo|240|none|1
 PFM_SNV.json|pfm-no-prediction|240|none|1
 AllUITest.json|lenses|120|targets|4
-usecase.json|triage|180|targets|4
+usecase.json|triage|180|triage|4
+ScoutingDemo.json|scouting|95|none|2
 ProggedNoCom.json|programmer-limited-comms|150|targets|4
 ProggedWithCom.json|programmer-full-comms|150|targets|4
 CurrentNonFixed/DynamicTaskingShiftHeatmap.json|heatmap|58|targets|2

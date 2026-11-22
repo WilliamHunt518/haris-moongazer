@@ -1,0 +1,12 @@
+.spop-container, .spop { display:none !important; }
+div:has(> .dismissButton), .gm-style-mtc, .gm-style-mtc-bbw { display:none !important; }
+#sim_timing { display:none !important; }
+#mgcap { position:fixed; z-index:99999; left:24px; bottom:28px; max-width:62%; background:rgba(13,42,64,.94); color:#fff;
+  border-radius:12px; padding:14px 20px 15px; box-shadow:0 2px 4px rgba(13,42,64,.10),0 12px 32px rgba(13,42,64,.28);
+  font-family:"Segoe UI",system-ui,Roboto,Arial,sans-serif; transition:none; border-left:5px solid #fb9d23; }
+#mgcap b { display:block; font-size:22px; font-weight:700; letter-spacing:.2px; }
+#mgcap span { display:block; font-size:16px; line-height:1.4; color:#cfe3ef; margin-top:4px; }
+#mgcap.big b { font-size:30px; } #mgcap.big span { font-size:19px; }
+#mgcur { position:fixed; z-index:100000; width:26px; height:26px; pointer-events:none; left:-50px; top:-50px; }
+#mgcur.down::after { content:""; position:absolute; left:-14px; top:-14px; width:28px; height:28px; border-radius:50%; background:rgba(251,157,35,.45); }
+#mgcap.top { bottom:auto; top:110px; }

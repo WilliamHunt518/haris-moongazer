@@ -55,10 +55,16 @@
    "duration": 150.35
   },
   {
+   "id": "scouting",
+   "file": "ScoutingDemo.json",
+   "title": "Progressive-Resolution Scouting",
+   "duration": 56.25
+  },
+  {
    "id": "triage",
    "file": "usecase.json",
    "title": "UseCase draft",
-   "duration": 180.35
+   "duration": 180.55
   }
  ]
 }

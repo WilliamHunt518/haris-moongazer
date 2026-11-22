@@ -18,6 +18,10 @@ allocation every --allocate-every seconds. PFM missions allocate themselves and 
 
 --operator teams: for the team heatmaps (heatmapUI "teams" or "lens"), every --allocate-every seconds each team with
 nothing to do is sent to the nearest mission (spawn batch) that no team is on, the way an operator drags it there.
+
+--operator triage: for scan review and triage (usecase.json). Like "targets", plus what the browser and operator do in a
+live run: a target is revealed (scanned) once a drone flies within 50 m of it, and each scan that arrives is triaged
+--triage-delay seconds later, cycling high, medium and low priority, so the ground vehicles respond.
 """
 import argparse, gzip, json, math, os, time, urllib.parse, urllib.request
 
@@ -92,6 +96,39 @@ def send_idle_teams(s):
         covered.add(g)
 
 
+def dist_m(a, b):
+    lat = math.radians((a["latitude"] + b["latitude"]) / 2)
+    dy = (a["latitude"] - b["latitude"]) * 111320.0
+    dx = (a["longitude"] - b["longitude"]) * 111320.0 * math.cos(lat)
+    return math.hypot(dx, dy)
+
+
+class Triage:
+    """Scripted reveal and triage, as the browser and the operator do it in a live run."""
+    REVEAL_M = 50  # MapTargetController.revealDistance
+
+    def __init__(self, delay):
+        self.delay, self.revealed, self.seen, self.n = delay, set(), {}, 0
+
+    def step(self, s, t):
+        scouts = [a for a in s.get("agents") or [] if a.get("type") not in ("programmed", "groundAgent", "hub") and not a.get("hub")]
+        for tg in s.get("targets") or []:
+            if tg["id"] in self.revealed or tg.get("visible"):
+                continue
+            if any(dist_m(a["coordinate"], tg["coordinate"]) < self.REVEAL_M for a in scouts):
+                self.revealed.add(tg["id"])
+                post("/targets/reveal/" + urllib.parse.quote(tg["id"]))
+        for tid, ref in list((s.get("storedImages") or {}).items()):
+            first = self.seen.setdefault(tid, t)
+            if t - first >= self.delay:
+                prio = (3, 2, 1)[self.n % 3]
+                self.n += 1
+                try:
+                    post("/review/classify", {"ref": ref, "priority": prio})
+                except Exception as e:
+                    print("not triaged:", e)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--file", required=True, help="scenario file in server/web/scenarios")
@@ -100,8 +137,9 @@ def main():
     ap.add_argument("--seconds", type=float, default=120, help="simulated seconds to record")
     ap.add_argument("--hz", type=float, default=4, help="frames per simulated second")
     ap.add_argument("--speed", type=float, default=1, help="simulation speed while recording")
-    ap.add_argument("--operator", choices=["none", "targets", "teams"], default="none")
+    ap.add_argument("--operator", choices=["none", "targets", "teams", "triage"], default="none")
     ap.add_argument("--allocate-every", type=float, default=15)
+    ap.add_argument("--triage-delay", type=float, default=4, help="seconds a scan waits before the operator triages it")
     ap.add_argument("--out", default="server/web/replays")
     a = ap.parse_args()
 
@@ -113,7 +151,8 @@ def main():
     first = {k: v for k, v in state().items() if k not in DROP}  # before start: shows the briefing panel
     post("/mode/scenario/start")
 
-    next_alloc = 2.0 if a.operator in ("targets", "teams") else float("inf")
+    next_alloc = 2.0 if a.operator in ("targets", "teams", "triage") else float("inf")
+    triage = Triage(a.triage_delay) if a.operator == "triage" else None
     placed = False
     last_sent = {}
     frames = [{"t": 0, "d": first}]
@@ -124,6 +163,8 @@ def main():
         t = s.get("time", 0)
         if t + 1 < frames[-1]["t"]:
             break  # the scenario hit its own time limit and the server reset it
+        if triage:
+            triage.step(s, t)
         if t >= next_alloc and a.operator == "teams":
             send_idle_teams(s)
             next_alloc = t + min(a.allocate_every, 5)
