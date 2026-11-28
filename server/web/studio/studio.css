@@ -1,0 +1,57 @@
+/* HARIS Studio: the configurable interface used by the strategic/tactical study. Dark palette follows the study. */
+:root {
+    --st-bg: #030712;
+    --st-panel: #111827;
+    --st-raised: #1f2937;
+    --st-line: #1f2937;
+    --st-line-strong: #374151;
+    --st-text: #e5e7eb;
+    --st-text-2: #d1d5db;
+    --st-muted: #9ca3af;
+    --st-faint: #6b7280;
+    --st-accent: #22d3ee;
+    --st-amber: #f59e0b;
+    --st-red: #ef4444;
+    --st-green: #4ade80;
+    --st-purple: #a855f7;
+    --st-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --st-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--st-bg); color: var(--st-text); font-family: var(--st-sans); }
+.st-root { position: fixed; inset: 0; display: flex; flex-direction: column; overflow: hidden; }
+.st-root.st-framed { border-style: solid; border-color: var(--st-accent); }
+.st-loading, .st-message { margin: auto; color: var(--st-muted); font-size: 18px; text-align: center; max-width: 520px; line-height: 1.5; }
+.st-message a { color: var(--st-accent); }
+
+/* Layout containers built from the scenario's interface block */
+.st-row { display: flex; flex-direction: row; min-height: 0; min-width: 0; }
+.st-col { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.st-cell { position: relative; min-height: 0; min-width: 0; overflow: hidden; display: flex; flex-direction: column; }
+.st-row > .st-cell + .st-cell, .st-row > .st-col + .st-cell, .st-row > .st-cell + .st-col { border-left: 1px solid var(--st-line); }
+.st-col > .st-cell + .st-cell, .st-col > .st-row + .st-cell, .st-col > .st-cell + .st-row { border-top: 1px solid var(--st-line); }
+
+/* Header */
+.st-header { display: flex; align-items: center; gap: 14px; padding: 8px 14px; background: var(--st-panel); font-size: 15px; flex: none; }
+.st-badge { font-weight: 700; letter-spacing: .12em; font-size: 12px; padding: 3px 8px; border-radius: 4px; border: 1px solid currentColor; }
+.st-title { font-weight: 600; color: var(--st-text); }
+.st-spacer { flex: 1; }
+.st-clock { font-family: var(--st-mono); font-size: 20px; color: #fbbf24; font-weight: 700; }
+.st-dim { color: var(--st-muted); }
+.st-btn { font: inherit; font-size: 14px; color: var(--st-text-2); background: var(--st-raised); border: 1px solid var(--st-line-strong); border-radius: 5px; padding: 5px 12px; cursor: pointer; }
+.st-btn:hover { border-color: var(--st-muted); color: #fff; }
+.st-btn:disabled { opacity: .4; cursor: not-allowed; }
+.st-btn-primary { background: #2563eb; border-color: #2563eb; color: #fff; }
+.st-btn-primary:hover { background: #3b82f6; }
+
+/* Placeholder for panels not built yet */
+.st-placeholder { margin: auto; padding: 16px; color: var(--st-faint); font-size: 14px; text-align: center; }
+.st-placeholder code { color: var(--st-muted); font-family: var(--st-mono); }
+
+/* Map base */
+.st-map { position: absolute; inset: 0; background: #0b1220; }
+.st-map-grid { position: absolute; inset: 0; background-color: #0f172a;
+    background-image: linear-gradient(rgba(148,163,184,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,.07) 1px, transparent 1px);
+    background-size: 40px 40px; }
+.st-map svg.st-world { position: absolute; overflow: visible; }
+.st-map-note { position: absolute; left: 8px; bottom: 6px; font-size: 11px; color: var(--st-faint); pointer-events: none; }

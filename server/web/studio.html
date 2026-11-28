@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HARIS Studio</title>
+    <link rel="icon" href="theme/hare.svg">
+    <link rel="stylesheet" href="studio/studio.css">
+    <script>
+        // Substituted by the server when the page is served (see tool.MapsKey); empty when no key is configured,
+        // in which case the map panels draw a plain grid instead of Google terrain.
+        window.HARIS_MAPS_KEY = "%HARIS_MAPS_KEY%";
+    </script>
+</head>
+<body>
+<div id="studio" class="st-root">
+    <div class="st-loading">Loading…</div>
+</div>
+<script type="module" src="studio/studio.js"></script>
+</body>
+</html>

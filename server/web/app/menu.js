@@ -31,7 +31,12 @@ function menuInit() {
         $.post('/reset').always(function () {
             setLookTiming().always(function () {
                 $.post('/mode/scenario', {'file-name': fileName}, function () {
-                    window.location = "sandbox.html";
+                    // A scenario can name its own page (the strategic/tactical study opens HARIS Studio)
+                    $.getJSON('/mode/page').done(function (r) {
+                        window.location = (r && r.page) || "sandbox.html";
+                    }).fail(function () {
+                        window.location = "sandbox.html";
+                    });
                 }).fail(function () {
                     launching = false;
                     if (button) button.prop("disabled", false).text("Launch");

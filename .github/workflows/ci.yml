@@ -54,6 +54,13 @@ jobs:
                   urllib.request.urlopen(base + "mode/scenario", data)
                   print("ok", t["id"], f)
           PY
+          # Strategic/tactical study: loads, opens Studio, and the engine answers
+          curl -sf -X POST localhost:44101/reset > /dev/null
+          curl -sf -X POST -d 'file-name=StratTac_Study.json' localhost:44101/mode/scenario > /dev/null
+          curl -sf localhost:44101/mode/page | grep -q 'studio.html'
+          curl -sf localhost:44101/strattac/config | grep -q '"enabled": true'
+          curl -sf localhost:44101/strattac/state | grep -q '"phase":"setup"'
+          curl -sf localhost:44101/studio.html | grep -q 'HARIS_MAPS_KEY = "ci-placeholder-key"'
       - name: Server output
         if: always()
         run: cat server.out || true

@@ -41,7 +41,8 @@ public class PresetHandler extends RestHandler {
         String scenarioFileName = params.get("file-name");
         if(this.simulator.loadScenarioMode(scenarioFileName)) {
             //this.simulator.startSimulation();
-            resp.redirect("/sandbox.html", true);
+            String page = this.simulator.getScenarioPage();
+            resp.redirect("/" + (page == null ? "sandbox.html" : page), true);
         } else {
             resp.sendError(400, "Unable to start scenario from file " + scenarioFileName);
         }

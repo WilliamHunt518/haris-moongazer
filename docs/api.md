@@ -31,6 +31,7 @@ The handlers are in `server/src/server/controller/handler/`, one per URL prefix.
 |---|---|---|---|
 | GET | `/mode/scenario-list` | | Scenarios at the top level of `web/scenarios/`, as a JSON array of `{fileName, gameId}`. |
 | GET | `/mode/in-progress` | | Whether a mission is running. |
+| GET | `/mode/page` | | The page the launcher should open for the loaded scenario, as `{"page": "..."}` (its `page` key, or `sandbox.html`). |
 | POST | `/mode/sandbox` | | Start the sandbox. |
 | POST | `/mode/scenario` | `file-name` | Load a scenario. The path is relative to `web/scenarios/` and may include a subfolder. **400** if it can't be loaded. |
 | POST | `/mode/scenario/start` | | Start the loaded scenario's clock. |
@@ -98,6 +99,16 @@ These change the temporary allocation, except `confirm`, which makes it the main
 |---|---|---|---|
 | POST | `/ui/toggle` | `name`, `status` | Turn a [UI option](scenarios.md#interface-options) on or off. **400** if the scenario doesn't declare it. |
 | POST | `/changeview` | `edit` | Switch mode: `1` monitor, `2` edit. |
+
+## Strategic/tactical study (`/strattac`)
+
+Available when the loaded scenario has a `strattac` block. See [HARIS Studio](studio.md).
+
+| Method | Path | Params | Description |
+|---|---|---|---|
+| GET | `/strattac/config` | | The scenario's `strattac` and `interface` blocks, plus `enabled`. |
+| GET | `/strattac/state` | | Snapshot of the study engine. **404** if no study is loaded. |
+| POST | `/strattac/action` | JSON body with `type` | One operator action. Returns `{"ok": true}` or `{"ok": false, "error": ...}`. |
 
 ## Legacy
 

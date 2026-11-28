@@ -1,0 +1,56 @@
+{
+  "gameId": "Strategic and tactical drone study",
+  "gameDescription": "Search-and-rescue drone missions run at two levels: a strategic view that commits drones to missions and a tactical view that assigns them to tasks. Port of the StratTac study.",
+  "gameCentre": {"lat": 54.54515, "lng": -3.2937},
+  "page": "studio.html?view=strategic",
+  "simSpeed": 1.0,
+  "tickRate": 10,
+  "strattac": {
+    "world": {"width": 1400, "height": 800, "hub": [700, 400]},
+    "map": {
+      "type": "terrain",
+      "bbox": {"north": 54.5986, "south": 54.4917, "west": -3.4715, "east": -3.1159}
+    },
+    "sessionSeconds": 480,
+    "droneTypes": [
+      {"id": "Blue",  "label": "Fast",   "short": "F", "colour": "#3b82f6", "text": "#60a5fa", "speed": 11, "count": 11, "icon": "studio/icons/drone-blue.svg"},
+      {"id": "Red",   "label": "Lifter", "short": "L", "colour": "#ef4444", "text": "#f87171", "speed": 10, "count": 11, "icon": "studio/icons/drone-red.svg"},
+      {"id": "Green", "label": "Camera", "short": "C", "colour": "#22c55e", "text": "#86efac", "speed": 9,  "count": 11, "icon": "studio/icons/drone-green.svg"}
+    ]
+  },
+  "interface": {
+    "theme": "dark",
+    "views": {
+      "strategic": {
+        "title": "SAR Command",
+        "badge": "STRATEGIC",
+        "accent": "#22d3ee",
+        "frame": 5,
+        "layout": {"column": [
+          {"panel": "header", "options": {"items": ["badge", "title", "session", "clock", "switchView"]}},
+          {"row": [
+            {"column": [
+              {"panel": "reserve"},
+              {"panel": "missionList", "flex": 1}
+            ], "width": 440},
+            {"panel": "strategicMap", "flex": 1}
+          ], "flex": 1}
+        ]}
+      },
+      "tactical": {
+        "title": "Within-mission drone → task assignment",
+        "badge": "TACTICAL",
+        "accent": "#f59e0b",
+        "frame": 5,
+        "layout": {"column": [
+          {"panel": "header", "options": {"items": ["badge", "title", "session", "clock", "switchView"]}},
+          {"row": [
+            {"panel": "missionQueue", "width": 256},
+            {"panel": "tacticalPlanner", "flex": 1},
+            {"panel": "taskSchedule", "width": 560}
+          ], "flex": 1}
+        ]}
+      }
+    }
+  }
+}
