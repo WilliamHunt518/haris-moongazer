@@ -43,11 +43,16 @@
         "accent": "#f59e0b",
         "frame": 5,
         "layout": {"column": [
-          {"panel": "header", "options": {"items": ["badge", "title", "session", "clock", "switchView"]}},
+          {"panel": "header", "options": {"tint": true, "items": ["badge", "title"]}},
           {"row": [
             {"panel": "missionQueue", "width": 256},
-            {"panel": "tacticalPlanner", "flex": 1},
-            {"panel": "taskSchedule", "width": 560}
+            {"column": [
+              {"panel": "tacticalToolbar"},
+              {"row": [
+                {"panel": "tacticalPlanner", "flex": 1},
+                {"panel": "taskSchedule", "width": 560}
+              ], "flex": 1}
+            ], "flex": 1}
           ], "flex": 1}
         ]}
       }

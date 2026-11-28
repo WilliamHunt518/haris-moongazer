@@ -3,3 +3,4 @@ import "./header.js";
 import "./reserve.js";
 import "./missionList.js";
 import "./strategicMap.js";
+import "./tactical.js";

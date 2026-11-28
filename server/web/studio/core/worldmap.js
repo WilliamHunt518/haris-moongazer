@@ -177,6 +177,8 @@ export function createWorldMap(el, ctx, options = {}) {
         });
         Object.assign(svg.style, {});
         svg.setAttribute("preserveAspectRatio", "none");
+        // Dim the terrain a little so the drawing on top stays high-contrast (as the original's map image)
+        svg.insertBefore(svgEl("rect", { x: 0, y: 0, width: W, height: H, fill: "#0b1220", opacity: 0.28, "pointer-events": "none" }), svg.firstChild);
         overlay = new maps.OverlayView();
         overlay.onAdd = function () { this.getPanes().overlayMouseTarget.appendChild(svg); };
         overlay.draw = function () {

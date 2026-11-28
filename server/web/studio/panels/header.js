@@ -1,4 +1,4 @@
-// Header bar. options.items picks and orders its parts:
+// Header bar. options.tint: amber-tinted bar (the tactical view). options.items picks and orders its parts:
 //   badge, title, session, mode, test, spacer, testControls, clock, score, switchView, start
 // "clock" adds a spacer before itself unless the list has an explicit "spacer".
 import { registerPanel } from "../core/registry.js";
@@ -8,7 +8,7 @@ registerPanel("header", {
     create(el, ctx, options) {
         const items = options.items || ["badge", "title", "session", "clock", "switchView"];
         const bar = document.createElement("div");
-        bar.className = "st-header";
+        bar.className = "st-header" + (options.tint ? " st-tinted" : "");
         el.appendChild(bar);
         el.style.flex = "none";
         const parts = {};

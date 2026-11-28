@@ -41,10 +41,17 @@ and sends operator actions to `POST /strattac/action`, so no tab is in charge an
 
 | Panel | Shows | Options |
 |---|---|---|
-| `header` | View badge and title, session, mode, clock, score, buttons to the other views. In testing mode, researcher shortcuts (new mission, force a failure, end the session or study). | `items`: any of `badge`, `title`, `session`, `mode`, `test`, `spacer`, `testControls`, `clock`, `score`, `switchView`, `start`, in display order. |
+| `header` | View badge and title, session, mode, clock, score, buttons to the other views. In testing mode, researcher shortcuts (new mission, force a failure, end the session or study). | `items`: any of `badge`, `title`, `session`, `mode`, `test`, `spacer`, `testControls`, `clock`, `score`, `switchView`, `start`, in display order. `tint`: amber-tinted bar, as in the tactical view. |
 | `reserve` | Drones of each type at the hub, how many are out, and the forecast mix of incoming mission categories. | |
 | `missionList` | Mission cards grouped as incoming, committed, active and completed, each with its task bar, penalty histogram and task plan. *Allocate* opens the strategic panel in the card: the Strategic Assistant's Aggressive and Conservative cards, which "analyse" for their logged reveal delay before they can be picked, or a manual drone-count picker with a live ETA. | |
 | `strategicMap` | The whole study area: mission zones, drone routes and positions, task waypoints, the hub. Scroll to zoom, drag to pan, Low/Mid/Full detail button. Clicking a queued zone allocates it; clicking a committed or active one opens it in the tactical view. | `detail` (0–2, default 2), `cover` (default true: zoomed out, the map still fills the panel, as in the original). |
+| `missionQueue` | Tactical view: missions waiting for a tactical plan or a failure recovery, most urgent first, with their pending penalty. Clicking one opens it in the planner. | |
+| `tacticalToolbar` | Tactical view: the selected mission, its wait timer, and the *Suggest* (Tactical Assistant), *Reset*, *Abort Mission* and *Abandon Mission* buttons. | |
+| `tacticalPlanner` | Tactical view: the mission zone with its task waypoints. Drag a drone onto a task to assign it, back to the Unassigned tray to free it. The Tactical Assistant's plan is revealed one drone per second. | |
+| `taskSchedule` | Tactical view: per drone, the order and timing of its tasks, with lockout warnings, and the *Deploy* (or *Reassign*, in a recovery) button. | |
+
+The four tactical panels share one plan per tab (`core/tactical.js`): the plan stays in the page until *Deploy*, and every
+change is sent to the server as `TACTICAL_ASSIGN_CHANGED` so it is logged.
 
 Game rules the panels display (task values and compositions, penalty rates) come from the server in `/strattac/config`
 under `rules`, so they are never repeated in the page code.
