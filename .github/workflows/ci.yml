@@ -61,8 +61,12 @@ jobs:
           curl -sf localhost:44101/strattac/config | grep -q '"enabled": true'
           curl -sf localhost:44101/strattac/config | grep -q '"categoryPenaltyRate"'
           curl -sf localhost:44101/strattac/state | grep -q '"phase":"setup"'
-          curl -sf -X POST -H 'Content-Type: application/json' -d '{"type":"START_STUDY","config":{}}' localhost:44101/strattac/action | grep -q '"ok":true'
+          curl -sf -X POST -H 'Content-Type: application/json' -d '{"type":"START_STUDY","config":{"participantId":"ci"}}' localhost:44101/strattac/action | grep -q '"ok":true'
           curl -sf localhost:44101/strattac/state | grep -q '"phase":"playing"'
+          # The study log: events go to log/strattac as JSONL, and the participant file downloads
+          ls log/strattac/*_ci_none_42.jsonl
+          curl -sf localhost:44101/strattac/results | grep -q '"participantId": "ci"'
+          curl -sf localhost:44101/strattac/snapshot | grep -q '"snapshotType": "mid_session"'
           curl -sf -X POST -H 'Content-Type: application/json' -d '{"type":"NOT_AN_ACTION"}' localhost:44101/strattac/action | grep -q '"ok":false'
           curl -sf localhost:44101/studio.html | grep -q 'HARIS_MAPS_KEY = "ci-placeholder-key"'
       - name: Server output

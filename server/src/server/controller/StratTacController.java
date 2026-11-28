@@ -2,8 +2,10 @@ package server.controller;
 
 import server.Simulator;
 import server.strattac.StratTacEngine;
+import server.strattac.StudyLogWriter;
 import tool.GsonUtils;
 
+import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.logging.FileHandler;
@@ -19,6 +21,7 @@ public class StratTacController extends AbstractController {
 
     private volatile StratTacEngine engine;
     private volatile Map<String, Object> scenario;
+    private StudyLogWriter studyLog;
 
     public StratTacController(Simulator simulator) {
         super(simulator, StratTacController.class.getName());
@@ -27,6 +30,14 @@ public class StratTacController extends AbstractController {
     public void configure(Map<String, Object> scenario) {
         this.scenario = scenario;
         this.engine = new StratTacEngine(scenario, LOGGER);
+        closeLog();
+        Object st = scenario.get("strattac");
+        Object dir = st instanceof Map<?, ?> m ? m.get("logDir") : null;
+        // "logDir": false turns the files off; a string picks another directory
+        if (!Boolean.FALSE.equals(dir)) {
+            studyLog = new StudyLogWriter(Path.of(dir instanceof String d && !d.isBlank() ? d : "log/strattac"), LOGGER);
+            engine.setStudyLog(studyLog);
+        }
         LOGGER.info(String.format("%s; STCFG; StratTac study configured", simulator.getState().getTime()));
     }
 
@@ -40,6 +51,7 @@ public class StratTacController extends AbstractController {
     }
 
     public void reset() {
+        closeLog();
         engine = null;
         scenario = null;
     }
@@ -61,6 +73,11 @@ public class StratTacController extends AbstractController {
         }
         out.put("enabled", s != null);
         return GsonUtils.toJson(out);
+    }
+
+    private void closeLog() {
+        if (studyLog != null) studyLog.close();
+        studyLog = null;
     }
 
     public StratTacEngine getEngine() {

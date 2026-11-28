@@ -66,6 +66,7 @@ html, body { margin: 0; height: 100%; background: var(--st-bg); color: var(--st-
 .st-score { color: var(--st-muted); display: flex; align-items: baseline; gap: 6px; font-size: 14px; }
 .st-score b { color: #fff; }
 .st-btn-sm { font-size: 12px; padding: 3px 10px; }
+.st-btn-quiet { color: var(--st-faint); }
 .st-btn-warn { background: rgba(124,45,18,.5); color: #fdba74; border-color: #c2410c; }
 .st-btn-danger { background: rgba(127,29,29,.5); color: #fca5a5; border-color: #b91c1c; }
 

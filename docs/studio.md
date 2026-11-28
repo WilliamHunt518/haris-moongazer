@@ -41,7 +41,7 @@ and sends operator actions to `POST /strattac/action`, so no tab is in charge an
 
 | Panel | Shows | Options |
 |---|---|---|
-| `header` | View badge and title, session, mode, clock, score, buttons to the other views. In testing mode, researcher shortcuts (new mission, force a failure, end the session or study). | `items`: any of `badge`, `title`, `session`, `mode`, `test`, `spacer`, `testControls`, `clock`, `score`, `switchView`, `start`, in display order. `tint`: amber-tinted bar, as in the tactical view. |
+| `header` | View badge and title, session, mode, clock, score, buttons to the other views. In testing mode, researcher shortcuts (new mission, force a failure, end the session or study). | `items`: any of `badge`, `title`, `session`, `mode`, `test`, `spacer`, `testControls`, `clock`, `score`, `switchView`, `snapshot` (downloads a mid-session snapshot), `start`, in display order. `tint`: amber-tinted bar, as in the tactical view. |
 | `reserve` | Drones of each type at the hub, how many are out, and the forecast mix of incoming mission categories. | |
 | `missionList` | Mission cards grouped as incoming, committed, active and completed, each with its task bar, penalty histogram and task plan. *Allocate* opens the strategic panel in the card: the Strategic Assistant's Aggressive and Conservative cards, which "analyse" for their logged reveal delay before they can be picked, or a manual drone-count picker with a live ETA. | |
 | `strategicMap` | The whole study area: mission zones, drone routes and positions, task waypoints, the hub. Scroll to zoom, drag to pan, Low/Mid/Full detail button. Clicking a queued zone allocates it; clicking a committed or active one opens it in the tactical view. | `detail` (0–2, default 2), `cover` (default true: zoomed out, the map still fills the panel, as in the original). |
@@ -58,6 +58,22 @@ under `rules`, so they are never repeated in the page code.
 
 When one view opens another (for example a mission in the tactical view), an already open tab for that view is told
 over a `BroadcastChannel` instead of being reloaded. Panels listen with `ctx.onViewMessage(fn)`.
+
+## Study logs
+
+The engine logs the original study's events, with the same names, fields and envelope (`seq`, `timestamp`, `wallClock`,
+`sessionId`, `reserveState`, `context`, ...), plus `"platform": "haris"`. The `session_start` event records the browser that
+started the session (`userAgent`, `viewport`), as the original did. Two files are written per study, in `log/strattac/`
+by default (the `logDir` key):
+
+| File | Contents |
+|---|---|
+| `<time>_<participant>_<condition>_<seed>.jsonl` | Every event, one JSON object per line, written as it happens, so a crash loses nothing. |
+| `study_<participant>_<condition>_<seed>_<time>.json` | The participant file, in the original's *Download Data* format (`participantId`, `condition`, `mode`, `complexities`, `seed`, the two ε values, `demographics`, `sessionScores`, `totalScore`, and `sessions`, one event list per session). It is written at the end of every session and again at the end of the study. |
+
+`GET /strattac/results` downloads the participant file at any time, and the header's *Snapshot* button (`GET
+/strattac/snapshot`) downloads the original's mid-session snapshot. `server/log/strattac/` is ignored by git: these files
+identify participants, so keep them out of the repository.
 
 ## Writing a panel
 

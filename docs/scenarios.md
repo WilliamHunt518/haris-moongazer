@@ -276,6 +276,7 @@ A `strattac` block turns on the strategic/tactical drone study engine, and an `i
 | `map` | Map type and the latitude/longitude box the world is drawn over. Without a Maps key the views show a grid. |
 | `droneTypes` | The three drone types: internal id (`Blue`, `Red`, `Green`), operator-facing label (Fast, Lifter, Camera), colour, speed in units per second, fleet count and icon. |
 | `study` | Defaults for the study start screen: `complexity` (`balanced`, `strategic`, `tactical`, `full`, `quick`), `sessionComplexities`, `seed`, `numSessions`, `mode` (`agent` or `no-agent`), `tacticalMode` (`plan-all` or `greedy`), `fixLockouts`, `failureGraceSeconds`, `agentFailuresEnabled`, `agentErrorRate` (the Strategic Assistant's ε), `epsilonTactical`, `swapGames`, `collectDemographics`, `testingMode`. Values sent with `START_STUDY` override them. |
+| `logDir` | Where the study log goes (default `log/strattac`, relative to the server's working directory). `false` turns the files off. See [studio.md](studio.md#study-logs). |
 
 The engine (`server/src/server/strattac/`) is a port of the original study's reducer. Its mission generator and both assistants give the same answers as the original for the same seed, and a scripted operator gets the same session outcomes. See [studio.md](studio.md#engine-parity).
 

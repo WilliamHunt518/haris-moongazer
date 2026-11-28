@@ -13,6 +13,8 @@ import java.util.Map;
  * REST API for the strategic/tactical study:
  *   GET  /strattac/config  the scenario's strattac and interface blocks
  *   GET  /strattac/state   a snapshot of the engine state (polled by every view)
+ *   GET  /strattac/results  the participant file so far (study_<participant>_<condition>_<seed>.json), as a download
+ *   GET  /strattac/snapshot a mid-session snapshot with the live state and all events so far, as a download
  *   POST /strattac/action  one operator action, as a JSON object with a "type" field
  */
 public class StratTacHandler extends RestHandler {
@@ -33,6 +35,18 @@ public class StratTacHandler extends RestHandler {
                 StratTacEngine engine = simulator.getStratTacController().getEngine();
                 if (engine == null) resp.send(404, "No strategic/tactical study is loaded");
                 else sendJson(resp, engine.snapshotJson());
+                break;
+            }
+            case "/results":
+            case "/snapshot": {
+                StratTacEngine engine = simulator.getStratTacController().getEngine();
+                if (engine == null) { resp.send(404, "No strategic/tactical study is loaded"); break; }
+                StratTacEngine.StudyConfig c = engine.studyConfig();
+                String name = safe(c.participantId) + (rPath.equals("/results") ? "_" + safe(c.condition) + "_" + c.seed : "");
+                String file = rPath.equals("/results") ? "study_" + name + ".json"
+                        : "sar_snapshot_" + name + "_s" + engine.sessionNumber() + "_" + System.currentTimeMillis() + ".json";
+                resp.getHeaders().add("Content-Disposition", "attachment; filename=\"" + file + "\"");
+                sendJson(resp, rPath.equals("/results") ? engine.studyPayloadJson() : engine.snapshotPayloadJson());
                 break;
             }
             default:
@@ -64,6 +78,11 @@ public class StratTacHandler extends RestHandler {
         @SuppressWarnings("unchecked")
         String result = engine.dispatch((Map<String, Object>) action);
         sendJson(resp, result);
+    }
+
+    private static String safe(String s) {
+        String out = s == null ? "" : s.replaceAll("[^A-Za-z0-9._-]", "-");
+        return out.isEmpty() ? "anon" : out;
     }
 
     private static void sendJson(Response resp, String json) throws IOException {

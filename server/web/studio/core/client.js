@@ -5,7 +5,16 @@ export async function fetchConfig() {
     return r.json();
 }
 
+// Actions that start a session carry the browser's details, which session_start logs as the original did
+const CLIENT_ACTIONS = new Set(["START_STUDY", "NEXT_SESSION"]);
+
 export async function sendAction(action) {
+    if (CLIENT_ACTIONS.has(action.type) && !action.client) {
+        action = { ...action, client: {
+            userAgent: navigator.userAgent,
+            viewport: { width: window.innerWidth, height: window.innerHeight, devicePixelRatio: window.devicePixelRatio },
+        } };
+    }
     const r = await fetch("/strattac/action", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

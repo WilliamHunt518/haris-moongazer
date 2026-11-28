@@ -45,6 +45,7 @@ import static server.strattac.Params.*;
 public class StratTacEngine {
 
     private static final Gson GSON = new GsonBuilder().serializeNulls().create();
+    private static final Gson PRETTY = new GsonBuilder().serializeNulls().setPrettyPrinting().create();
     private static final DateTimeFormatter ISO = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(ZoneOffset.UTC);
 
     /** The study configuration (StudyConfig). Defaults come from the scenario's "study" block. */
@@ -76,6 +77,18 @@ public class StratTacEngine {
     private final Map<String, Object> studyDefaults;
     /** Called with each logged event (the study log writer hooks in here). */
     private Consumer<Map<String, Object>> eventSink = e -> {};
+    /** Where the study's log files go (see StudyLogWriter); null logs nothing to disk. */
+    private StudyLog studyLog;
+
+    /** Receives the study log: each event as it happens, and the participant file at each session boundary. */
+    public interface StudyLog {
+        /** A new study started; files for it should be opened. */
+        void studyStarted(StudyConfig config);
+        /** One logged event, already frozen. */
+        void event(Map<String, Object> event);
+        /** The participant payload, written when a session ends (survey) and when the study is done. */
+        void checkpoint(Map<String, Object> payload, boolean done);
+    }
 
     // ── GameState ────────────────────────────────────────────────────────────
     private StudyConfig config;
@@ -104,6 +117,9 @@ public class StratTacEngine {
     private BalancedRollState tacticalFailureRoll = new BalancedRollState();
     private final List<List<Map<String, Object>>> events = new ArrayList<>();
     private long eventSeq = 0;
+    /** The browser that started the current session (START_STUDY / NEXT_SESSION carry it), for session_start. */
+    private String clientUserAgent = "headless";
+    private Object clientViewport = null;
     private long version = 0;
 
     @SuppressWarnings("unchecked")
@@ -130,6 +146,18 @@ public class StratTacEngine {
 
     public synchronized void setEventSink(Consumer<Map<String, Object>> sink) {
         this.eventSink = sink == null ? e -> {} : sink;
+    }
+
+    public synchronized void setStudyLog(StudyLog log) {
+        this.studyLog = log;
+    }
+
+    /** Writes the participant file when the phase has just moved to the surveys or the end screen. */
+    private void checkpointIfBoundary(String before) {
+        if (studyLog == null || phase.equals(before)) return;
+        if (!"survey".equals(phase) && !"done".equals(phase)) return;
+        try { studyLog.checkpoint(studyPayloadMap(), "done".equals(phase)); }
+        catch (RuntimeException e) { logger.warning("StratTac study log checkpoint failed: " + e); }
     }
 
     // ── Config helpers ───────────────────────────────────────────────────────
@@ -287,12 +315,15 @@ public class StratTacEngine {
         full.put("platform", "haris");
         // Deep-copy through JSON so later state changes cannot alter a logged event
         @SuppressWarnings("unchecked")
-        Map<String, Object> frozen = GSON.fromJson(GSON.toJson(full), LinkedHashMap.class);
+        Map<String, Object> frozen = (Map<String, Object>) jsNumbers(GSON.fromJson(GSON.toJson(full), LinkedHashMap.class));
         int idx = Math.max(0, sessionNumber - 1);
         while (events.size() <= idx) events.add(new ArrayList<>());
         events.get(idx).add(frozen);
         eventSeq++;
         try { eventSink.accept(frozen); } catch (RuntimeException e) { logger.warning("StratTac event sink failed: " + e); }
+        if (studyLog != null) {
+            try { studyLog.event(frozen); } catch (RuntimeException e) { logger.warning("StratTac study log failed: " + e); }
+        }
     }
 
     // ── Reserve ──────────────────────────────────────────────────────────────
@@ -982,6 +1013,7 @@ public class StratTacEngine {
         rawElapsed = rawMicros / 1e6;
         tick(config.testingMode ? rawElapsed : Math.min(sessionDuration, rawElapsed));
         version++;
+        checkpointIfBoundary("playing");
     }
 
     private void tick(double now) {
@@ -1144,8 +1176,8 @@ public class StratTacEngine {
                 "failureGraceSeconds", graceSeconds(), "swapGames", Boolean.TRUE.equals(config.swapGames),
                 "planSeedIndex", planSeedIndex(sessionNumber), "conservativeTopUp", CONSERVATIVE_TOP_UP,
                 "conservativeRedundancyBuffer", CONSERVATIVE_REDUNDANCY_BUFFER, "snapshotIntervalSec", STATE_SNAPSHOT_INTERVAL,
-                "trustProbeIntervalSec", TRUST_PROBE_INTERVAL, "appVersion", APP_VERSION, "userAgent", "haris-server",
-                "viewport", null));
+                "trustProbeIntervalSec", TRUST_PROBE_INTERVAL, "appVersion", APP_VERSION, "userAgent", clientUserAgent,
+                "viewport", clientViewport));
     }
 
     private void failureRolls(double now) {
@@ -1367,6 +1399,12 @@ public class StratTacEngine {
 
     // ── Session lifecycle ────────────────────────────────────────────────────
 
+    private void takeClient(Map<String, Object> a) {
+        Map<?, ?> cl = a.get("client") instanceof Map<?, ?> m ? m : Map.of();
+        clientUserAgent = cl.get("userAgent") instanceof String ua ? ua : "headless";
+        clientViewport = cl.get("viewport");
+    }
+
     private void startStudy(Map<String, Object> cfg) {
         config = configFrom(cfg);
         events.clear();
@@ -1375,6 +1413,9 @@ public class StratTacEngine {
         strategicFailureRoll = new BalancedRollState();
         tacticalFailureRoll = new BalancedRollState();
         demographics = null;
+        if (studyLog != null) {
+            try { studyLog.studyStarted(config); } catch (RuntimeException e) { logger.warning("StratTac study log failed to start: " + e); }
+        }
         beginSession(1);
         phase = Boolean.TRUE.equals(config.collectDemographics) ? "demographics" : "playing";
     }
@@ -1521,9 +1562,11 @@ public class StratTacEngine {
     public synchronized String dispatch(Map<String, Object> action) {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("ok", true);
+        String before = phase;
         try {
             apply(action, result);
             version++;
+            checkpointIfBoundary(before);
         } catch (Refused r) {
             result.clear();
             result.put("ok", false);
@@ -1537,6 +1580,7 @@ public class StratTacEngine {
         switch (type) {
             case "START_STUDY" -> {
                 if (!"setup".equals(phase) && !"done".equals(phase)) throw new Refused("A study is already running");
+                takeClient(a);
                 startStudy(a.get("config") instanceof Map<?, ?> m ? (Map<String, Object>) m : Map.of());
                 logger.info(String.format("STSTART; StratTac study started (participant, seed); %s; %d", config.participantId, config.seed));
             }
@@ -1590,6 +1634,7 @@ public class StratTacEngine {
             }
             case "NEXT_SESSION" -> {
                 if (!"between".equals(phase)) throw new Refused("Not between sessions");
+                takeClient(a);
                 logEvent(ev("phase_change", "fromPhase", phase, "toPhase", "playing"));
                 beginSession(sessionNumber + 1);
                 phase = "playing";
@@ -2117,10 +2162,129 @@ public class StratTacEngine {
         return GSON.toJson(out);
     }
 
+    /** The participant file, in the original study's download format (study_<participant>_<condition>_<seed>.json). */
+    public synchronized String studyPayloadJson() {
+        return PRETTY.toJson(studyPayloadMap());
+    }
+
+    private Map<String, Object> studyPayloadMap() {
+        List<String> complexities = new ArrayList<>();
+        for (int i = 1; i <= config.numSessions; i++) complexities.add(complexityForSession(i));
+        long total = 0;
+        for (long v : completedSessionScores) total += v;
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("participantId", config.participantId);
+        out.put("condition", config.condition);
+        out.put("mode", config.mode);
+        out.put("complexities", complexities);
+        out.put("seed", config.seed);
+        out.put("epsilonStrategic", config.agentErrorRate);
+        out.put("epsilonTactical", config.epsilonTactical);
+        out.put("demographics", demographics);
+        out.put("sessionScores", completedSessionScores);
+        out.put("totalScore", total);
+        out.put("sessions", events);
+        out.put("platform", "haris");
+        return out;
+    }
+
+    /** A mid-session snapshot, in the original study's Snapshot format: config, progress, live state and all events so far. */
+    public synchronized String snapshotPayloadJson() {
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("snapshotTime", ISO.format(Instant.now()));
+        out.put("snapshotType", "mid_session");
+        out.put("participantId", config.participantId);
+        out.put("condition", config.condition);
+        out.put("mode", config.mode);
+        out.put("complexity", complexityForSession(Math.max(1, sessionNumber)));
+        out.put("seed", config.seed);
+        out.put("epsilonStrategic", config.agentErrorRate);
+        out.put("epsilonTactical", config.epsilonTactical);
+        out.put("testingMode", config.testingMode);
+        out.put("sessionNumber", sessionNumber);
+        out.put("elapsed", round1(elapsed));
+        out.put("score", score);
+        out.put("penaltyAccrued", penaltyAccrued);
+        out.put("sessionScores", completedSessionScores);
+        Map<String, Object> live = new LinkedHashMap<>();
+        live.put("elapsed", round1(elapsed));
+        live.put("score", score);
+        live.put("penaltyAccrued", penaltyAccrued);
+        live.put("reserve", reserveCount(false));
+        live.put("effectiveReserve", reserveCount(true));
+        List<Map<String, Object>> ms = new ArrayList<>();
+        for (Mission m : missions) {
+            Map<String, Object> mm = new LinkedHashMap<>();
+            mm.put("id", m.id);
+            mm.put("category", m.category);
+            mm.put("status", m.status);
+            mm.put("allocationTime", m.allocationTime == null ? null : round1(m.allocationTime));
+            mm.put("completionTime", m.completionTime == null ? null : round1(m.completionTime));
+            mm.put("agentInteraction", m.agentInteraction);
+            mm.put("chosenStrategy", m.chosenStrategyName);
+            mm.put("tacticalPending", m.tacticalPending);
+            mm.put("failureRecoveryPending", m.failureRecoveryPending);
+            mm.put("tacticallySuppressedTaskId", m.tacticallySuppressedTaskId);
+            List<Map<String, Object>> ts = new ArrayList<>();
+            for (Task t : m.tasks) {
+                Map<String, Object> tm = new LinkedHashMap<>();
+                tm.put("id", t.id);
+                tm.put("type", t.type);
+                tm.put("status", t.status);
+                tm.put("assignedAssetIds", t.assignedAssetIds);
+                tm.put("startTime", t.startTime == null ? null : round1(t.startTime));
+                tm.put("completionTime", t.completionTime == null ? null : round1(t.completionTime));
+                ts.add(tm);
+            }
+            mm.put("tasks", ts);
+            ms.add(mm);
+        }
+        live.put("missions", ms);
+        List<Map<String, Object>> as = new ArrayList<>();
+        for (Asset a : assets) {
+            Map<String, Object> am = new LinkedHashMap<>();
+            am.put("id", a.id);
+            am.put("type", a.type);
+            am.put("status", a.status);
+            am.put("currentMissionId", a.currentMissionId);
+            am.put("currentTaskId", a.currentTaskId);
+            am.put("failedAt", a.failedAt);
+            as.add(am);
+        }
+        live.put("assets", as);
+        out.put("liveSession", live);
+        out.put("sessions", events);
+        out.put("platform", "haris");
+        return PRETTY.toJson(out);
+    }
+
+    /** Gson reads every number as a double; whole ones go back to longs so the log prints 12, not 12.0, as the browser did. */
+    @SuppressWarnings("unchecked")
+    private static Object jsNumbers(Object o) {
+        if (o instanceof Double d) {
+            double v = d;
+            return v == Math.rint(v) && Math.abs(v) < 9.007199254740992E15 && !(v == 0 && 1 / v < 0) ? (Object) (long) v : d;
+        }
+        if (o instanceof Map<?, ?> m) {
+            for (Map.Entry<String, Object> e : ((Map<String, Object>) m).entrySet()) e.setValue(jsNumbers(e.getValue()));
+            return m;
+        }
+        if (o instanceof List<?> l) {
+            List<Object> lo = (List<Object>) l;
+            for (int i = 0; i < lo.size(); i++) lo.set(i, jsNumbers(lo.get(i)));
+            return lo;
+        }
+        return o;
+    }
+
+    private static double round1(double v) { return Math.round(v * 10) / 10.0; }
+
     /** The whole study's events, one list per session (for the participant export). */
     public synchronized String eventsJson() {
         return GSON.toJson(events);
     }
 
     public synchronized String phase() { return phase; }
+    public synchronized StudyConfig studyConfig() { return config; }
+    public synchronized int sessionNumber() { return sessionNumber; }
 }

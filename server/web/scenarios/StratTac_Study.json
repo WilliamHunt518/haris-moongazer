@@ -27,7 +27,7 @@
         "accent": "#22d3ee",
         "frame": 5,
         "layout": {"column": [
-          {"panel": "header", "options": {"items": ["badge", "title", "session", "mode", "test", "spacer", "testControls", "clock", "score", "switchView", "start"]}},
+          {"panel": "header", "options": {"items": ["badge", "title", "session", "mode", "test", "spacer", "testControls", "clock", "score", "switchView", "snapshot", "start"]}},
           {"row": [
             {"column": [
               {"panel": "reserve"},
