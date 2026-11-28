@@ -57,6 +57,7 @@ The scenarios in `server/web/scenarios/` are working examples. `AllUITest.json` 
 | `timeLimitMinutes` | number | none | The same in minutes. If both are set, `timeLimitMinutes` wins. With neither, there is no time limit. |
 | `tickRate` | number | 10 | Engine updates per simulated second, from 2 to 30. Use 5 for the original feel. The operator can change it with the slider. |
 | `simSpeed` | number | 0.5 | Starting speed in simulated seconds per real second, from 0.25 to 8. The study scenarios set 1.0 so they run in real time. The operator can change it with the slider. |
+| `page` | string | `sandbox.html` | The page the launcher opens after loading the scenario, e.g. `studio.html?view=strategic` for a [HARIS Studio](studio.md) interface. |
 
 ## Agents, hub and objects
 
@@ -263,6 +264,21 @@ Scenarios: `Degradation_Tutorial.json` (6 episodes and a questionnaire at the en
 **New decks.** `./gradlew -q generateEpisodes -Pout=web/scenarios/eps/deck.json -Pseed=42` writes a balanced deck: swarm sizes 4, 8, 12, 16 and 20, every ordered pair of sizes appearing three times in one Eulerian tour (Hierholzer), colours balanced within each episode and disappearance times of 3, 4 or 5 seconds. It prints a check of all of this. Paste its `episodes` list into a copy of `Degradation_A.json`.
 
 Not carried over from the branch: the earlier n-back and cooldown-style episode files (`nBack*.json`, `degShort.json`, `rampUpDown.json`, `High`/`LowComplexity.json`), which the branch's final code no longer ran, and the older generators. They are in the `archive/exp_degradation_coloured` tag.
+
+## Strategic/tactical study
+
+A `strattac` block turns on the strategic/tactical drone study engine, and an `interface` block lays out its views in
+[HARIS Studio](studio.md). See `StratTac_Study.json`.
+
+| Key | Meaning |
+|---|---|
+| `world` | World size in study units (1400 × 800) and the hub position. |
+| `map` | Map type and the latitude/longitude box the world is drawn over. Without a Maps key the views show a grid. |
+| `droneTypes` | The three drone types: internal id (`Blue`, `Red`, `Green`), operator-facing label (Fast, Lifter, Camera), colour, speed in units per second, fleet count and icon. |
+| `study` | Defaults for the study start screen: `complexity` (`balanced`, `strategic`, `tactical`, `full`, `quick`), `sessionComplexities`, `seed`, `numSessions`, `mode` (`agent` or `no-agent`), `tacticalMode` (`plan-all` or `greedy`), `fixLockouts`, `failureGraceSeconds`, `agentFailuresEnabled`, `agentErrorRate` (the Strategic Assistant's ε), `epsilonTactical`, `swapGames`, `collectDemographics`, `testingMode`. Values sent with `START_STUDY` override them. |
+| `logDir` | Where the study log goes (default `log/strattac`, relative to the server's working directory). `false` turns the files off. See [studio.md](studio.md#study-logs). |
+
+The engine (`server/src/server/strattac/`) is a port of the original study's reducer. Its mission generator and both assistants give the same answers as the original for the same seed, and a scripted operator gets the same session outcomes. See [studio.md](studio.md#engine-parity).
 
 ## Dynamic tasks and abstraction
 

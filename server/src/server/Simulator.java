@@ -52,6 +52,8 @@ public class Simulator {
     private final ImageController imageController;
     private final ScoutingController scoutingController;
     private final EpisodeController episodeController;
+    private final StratTacController stratTacController;
+    private volatile String scenarioPage = null;  // Page the launcher opens for this scenario ("page" key); null = sandbox
 
     public static Simulator instance;
 
@@ -101,6 +103,7 @@ public class Simulator {
         imageController = new ImageController(this);
         scoutingController = new ScoutingController(this);
         episodeController = new EpisodeController(this);
+        stratTacController = new StratTacController(this);
 
         //queueManager.initDroneDataConsumer();
     }
@@ -404,6 +407,9 @@ public class Simulator {
                 imageController.checkForImages();
             }
             scoutingController.step();
+            // Strategic/tactical study: its own engine advances by the same simulated step
+            if (stratTacController.isEnabled())
+                stratTacController.step(1 / tickRate);
             } catch (RuntimeException e) {
                 String msg = String.valueOf(e);
                 if (!msg.equals(lastTickError)) {
@@ -560,6 +566,8 @@ public class Simulator {
         imageController.reset();
         scoutingController.reset();
         episodeController.reset();
+        stratTacController.reset();
+        scenarioPage = null;
 
         loadScenarioFromFile("web/scenarios/" + state.getNextFileName());
 
@@ -651,6 +659,8 @@ public class Simulator {
         imageController.reset();
         scoutingController.reset();
         episodeController.reset();
+        stratTacController.reset();
+        scenarioPage = null;
     }
 
     public void resetLogging(String userName) {
@@ -672,6 +682,7 @@ public class Simulator {
             modelCaller.resetLogger(fileHandler);
             scoutingController.resetLogger(fileHandler);
             episodeController.resetLogger(fileHandler);
+            stratTacController.resetLogger(fileHandler);
             currentLogFile = fileName;
             this.loggingFileHandler = fileHandler;
             LOGGER.info(String.format("%s; LGSTRT; Reset log (scenario, username); %s; %s ", getState().getTime(), state.getGameId(), userName));
@@ -838,6 +849,11 @@ public class Simulator {
                 this.state.setMotionScale(ms);
             if (obj instanceof Map<?, ?> scenarioMap && scenarioMap.get("episodes") != null)
                 episodeController.configure((Map<String, Object>) scenarioMap);
+            // Strategic/tactical study (StratTac): the engine and the interface configurator read the whole scenario
+            if (obj instanceof Map<?, ?> scenarioMap && scenarioMap.get("strattac") != null)
+                stratTacController.configure((Map<String, Object>) scenarioMap);
+            if (GsonUtils.getValue(obj, "page") instanceof String page && !page.isBlank())
+                scenarioPage = page;
 
             if(GsonUtils.hasKey(obj,"flockingEnabled")){
                 Object flockingEnabled = GsonUtils.getValue(obj, "flockingEnabled");
@@ -1234,6 +1250,15 @@ public class Simulator {
 
     public EpisodeController getEpisodeController() {
         return episodeController;
+    }
+
+    public StratTacController getStratTacController() {
+        return stratTacController;
+    }
+
+    /** The page the launcher should open for the loaded scenario (its "page" key), or null for the sandbox. */
+    public String getScenarioPage() {
+        return scenarioPage;
     }
 
     /** Writes the per-episode CSV summary of the degradation study next to the run's log file. */

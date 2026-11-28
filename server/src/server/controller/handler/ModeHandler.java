@@ -68,6 +68,15 @@ public class ModeHandler extends RestHandler {
             case "/in-progress":
                 handleInProgress(resp);
                 break;
+            case "/page": {
+                // The page the launcher opens for the loaded scenario ("page" key); sandbox.html by default
+                String page = this.simulator.getScenarioPage();
+                JsonObject out = new JsonObject();
+                out.addProperty("page", page == null ? "sandbox.html" : page);
+                resp.getHeaders().add("Content-type", "application/json; charset=utf-8");
+                resp.send(200, out.toString());
+                break;
+            }
             default:
                 throw new UnregisteredPathException("No method for handling GET request on " + req.getPath());
         }

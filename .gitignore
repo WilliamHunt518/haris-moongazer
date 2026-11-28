@@ -172,3 +172,4 @@ _site/
 server/*.episodes.csv
 server/*.summary.csv
 server/log/recordings/
+server/log/strattac/

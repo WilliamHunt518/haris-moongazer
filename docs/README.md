@@ -6,6 +6,7 @@
 | [Scenario reference](scenarios.md) | Every field a scenario file can set |
 | [Showcase and demo](showcase.md) | The launch page tiles and the papers behind them, adding a tile, the website and recorded replays |
 | [Architecture](architecture.md) | Server, simulation loop, allocation, agents, the drone programmer, predictive fleet management, browser client |
+| [HARIS Studio](studio.md) | Building study interfaces from the scenario file: views, panels, world maps, drone types |
 | [REST API](api.md) | Every HTTP endpoint |
 | [Contributing](../CONTRIBUTING.md) | Branches, CI, and the rules for changes |
 | [For later: real drones and manual control](legacy/real-drones.md) | The inherited Android app and manual-control code, not currently maintained |
