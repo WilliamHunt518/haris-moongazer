@@ -6,6 +6,7 @@
 import { registerPanel } from "../core/registry.js";
 import { createWorldMap } from "../core/worldmap.js";
 import { getTacticalStore } from "../core/tactical.js";
+import { tutorialInfo } from "../core/tutorialSteps.js";
 import { TYPES, TASK_ICON, esc, patch, div, typeOf, droneLabel, fmtSeconds, taskRule } from "../core/study.js";
 
 // The original's tactical planner names categories this way
@@ -42,6 +43,7 @@ registerPanel("missionQueue", {
         const store = getTacticalStore(ctx);
         startSelection(ctx, store);
         const box = div("st-tq", el);
+        box.dataset.tutorial = "tac-mission-list";
         const status = div("st-tq-status", box), head = div("st-tq-head", box), list = div("st-tq-list", box);
         list.addEventListener("click", (e) => {
             const b = e.target.closest("[data-id]");
@@ -77,6 +79,7 @@ registerPanel("tacticalToolbar", {
         const store = getTacticalStore(ctx);
         startSelection(ctx, store);
         const bar = div("st-tt", el);
+        bar.dataset.tutorial = "tac-header";
         bar.addEventListener("click", (e) => {
             const b = e.target.closest("[data-act]");
             if (!b || b.disabled) return;
@@ -97,9 +100,9 @@ registerPanel("tacticalToolbar", {
             }
             html += '<span class="st-spacer"></span><span class="hint">Drag → assign · Shift+drag → chain · hover a drone for its full path</span>'
                 + '<button class="b" data-act="reset">Reset</button>';
-            if (s.config.mode === "agent") {
+            if (s.config.mode === "agent" && !tutorialInfo(s).hideSuggest) {
                 const busy = st.suggesting || st.suggestQueue.length > 0;
-                html += `<button class="b sug" data-act="suggest" ${busy ? "disabled" : ""}>${busy ? '<span class="st-spin-sm"></span>Suggesting…' : "Suggest"}</button>`;
+                html += `<button class="b sug" data-act="suggest" data-tutorial="tac-suggest-btn" ${busy ? "disabled" : ""}>${busy ? '<span class="st-spin-sm"></span>Suggesting…' : "Suggest"}</button>`;
             }
             if (st.suggestNote) html += `<span class="note">${esc(st.suggestNote)}</span>`;
             if (!rec) html += '<button class="b" data-act="abort">Abort Mission</button>';
@@ -113,6 +116,7 @@ registerPanel("tacticalPlanner", {
     create(el, ctx) {
         const store = getTacticalStore(ctx);
         startSelection(ctx, store);
+        el.dataset.tutorial = "tac-svg-container";
         const map = createWorldMap(el, ctx, { gestures: "none" });
         const zoneL = map.layer("zone"), arrowL = map.layer("arrows"), dragL = map.layer("drag"), taskL = map.layer("tasks"), droneL = map.layer("drones");
         for (const l of [zoneL, arrowL, dragL, taskL]) l.style.pointerEvents = "none";
@@ -344,6 +348,8 @@ registerPanel("taskSchedule", {
         startSelection(ctx, store);
         const box = div("st-ts", el);
         const banner = div("", box), unassigned = div("", box), list = div("st-ts-list", box), foot = div("st-ts-foot", box);
+        unassigned.dataset.tutorial = "tac-unassigned"; list.dataset.tutorial = "tac-schedule";
+        let wasDeployable = null;
         box.addEventListener("click", (e) => {
             const b = e.target.closest("[data-act]");
             if (!b || b.disabled) return;
@@ -367,6 +373,10 @@ registerPanel("taskSchedule", {
             const typeOfId = (id) => byId.has(id) ? byId.get(id).type : typeOf(ctx, id).id;
             const seqs = store.sequences(), timings = store.timings(seqs), cycle = store.cycleTasks(seqs), present = store.presentByTask();
             const canDeploy = store.canDeploy(seqs), revealing = st.suggestQueue.length > 0;
+            // The tutorial moves on when a plan first becomes deployable
+            const deployKey = st.key + "|" + canDeploy;
+            if (canDeploy && wasDeployable !== null && wasDeployable !== deployKey && !wasDeployable.endsWith("true")) document.dispatchEvent(new CustomEvent("tutorial-plan-complete"));
+            wasDeployable = deployKey;
 
             // Help-needed banner
             let b = "";
@@ -434,7 +444,7 @@ registerPanel("taskSchedule", {
             if (revealing) f += '<button class="stop" data-act="stop">Stop Assistant — take over</button>';
             const label = rec ? (canDeploy ? "Reassign ✓" : cycle.size ? "Reassign (still deadlocked)" : "Reassign (incomplete)")
                 : revealing ? "Deploy (allocation in progress…)" : canDeploy ? "Deploy ✓" : "Deploy (incomplete)";
-            f += `<button class="deploy" data-act="deploy" ${!canDeploy || (!rec && revealing) ? "disabled" : ""}>${label}</button>`;
+            f += `<button class="deploy" data-act="deploy" data-tutorial="tac-deploy-btn" ${!canDeploy || (!rec && revealing) ? "disabled" : ""}>${label}</button>`;
             if (rec) f += '<button class="abandon" data-act="abandon">Abandon Mission</button>';
             patch(foot, f);
         });

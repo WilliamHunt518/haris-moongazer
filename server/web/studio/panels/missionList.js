@@ -6,6 +6,7 @@ import {
     TYPES, CATEGORY_NAME, TASK_SHORT, TASK_FULL, TASK_ICON, CATEGORY_ICON, esc, patch, div, typeOf, droneLabel,
     fmtTime, fmtSeconds, taskWeight, taskRule, missionPenalty, urgencyOf, taskDots, missionFloor,
 } from "../core/study.js";
+import { tutorialInfo } from "../core/tutorialSteps.js";
 
 const GROWTH = 1.15, HIST_H = 36;
 
@@ -14,6 +15,8 @@ registerPanel("missionList", {
         const scroll = div("st-scroll st-missions", el);
         const sortBar = div("st-sort", scroll);
         const body = div("", scroll);
+        body.dataset.tutorial = "mission-list";
+        let tut = { active: false }, anchorId = null;   // the card the tutorial's "first-…" spotlights attach to
         let sortMode = "arrival";
         let last = null;
         const cards = new Map();     // mission id -> { root, slots }
@@ -82,6 +85,7 @@ registerPanel("missionList", {
                     } else ui.editedFromStrategy = null;
                     ui.switchSnapshot = { before: !allLoaded(modal), loaded: ui.loaded.size };
                     ui.showManual = true;
+                    if (tut.active && tut.forceManual) document.dispatchEvent(new CustomEvent("tutorial-manual-selected"));
                     break;
                 }
                 case "to-cards": ui.showManual = false; ui.editedFromStrategy = null; ui.switchSnapshot = null; break;
@@ -130,6 +134,10 @@ registerPanel("missionList", {
             const done = s.missions.filter((m) => m.status === "completed" || m.status === "failed" || m.status === "abandoned");
             if (sortMode === "score") { queued = sortByScore(queued); active = sortByScore(active); }
             const awaitingAlloc = queued.filter((m) => !m.tacticalPending);
+            // The tutorial points at the topmost queued card, or at the newest one once the assistants lesson starts
+            tut = tutorialInfo(s);
+            const newest = [...s.missions].reverse().find((m) => m.status === "queued");
+            anchorId = !tut.active || !queued.length ? null : tut.anchorNewest ? (newest || queued[0]).id : queued[0].id;
             const awaitingTac = queued.filter((m) => m.tacticalPending);
 
             patch(sortBar, queued.length || active.length
@@ -191,6 +199,11 @@ registerPanel("missionList", {
             const state = allocating ? "allocating" : m.failureRecoveryPending ? "recovery" : m.tacticalPending ? "tactical"
                 : isQueued ? "queued" : isActive ? "active" : m.status === "failed" ? "failed" : "";
             c.root.className = "st-card " + state + (isQueued && !allocating && !m.tacticalPending ? " pulse" : "");
+            const first = m.id === anchorId;
+            const anchor = (name) => first ? ` data-tutorial="${name}"` : "";
+            if (first) c.root.dataset.tutorial = "first-mission-card"; else delete c.root.dataset.tutorial;
+            if (first) { c.bar.dataset.tutorial = "first-task-progress"; c.hist.dataset.tutorial = "first-penalty"; }
+            else { delete c.bar.dataset.tutorial; delete c.hist.dataset.tutorial; }
 
             // Header
             const doneTasks = m.tasks.filter((t) => t.status === "completed").length;
@@ -209,7 +222,7 @@ registerPanel("missionList", {
                 const eta = Math.max(0, Math.max(...m.tasks.map((t) => t.completionTime || 0)) - s.elapsed);
                 r += `<span class="st-xs st-dim st-mono">ETA ${fmtSeconds(eta)}</span>`;
             }
-            if (isQueued && !allocating && !m.tacticalPending) r += `<button class="st-allocate" data-act="allocate" data-id="${esc(m.id)}">Allocate</button>`;
+            if (isQueued && !allocating && !m.tacticalPending) r += `<button class="st-allocate" data-act="allocate" data-id="${esc(m.id)}"${anchor("first-allocate-btn")}>Allocate</button>`;
             if (allocating) r += '<span class="st-xs" style="color:#60a5fa;font-weight:500">Allocating…</span>';
             patch(c.head, `<div class="st-card-head"><div class="l">${l}</div><div class="r">${r}</div></div>`);
 
@@ -220,14 +233,14 @@ registerPanel("missionList", {
                     ? '<div class="st-banner st-banner-red"><b>⚠ LOCKOUT</b><span style="color:#6b7280">— drones stuck, re-plan the allocation</span></div>'
                     : `<div class="st-banner st-banner-red"><b>DRONE FAILURE</b>${m.failedDroneId ? `<span style="color:#f87171">${esc(droneLabel(ctx, m.failedDroneId))} lost</span>` : ""}<span style="color:#6b7280">— recovery required</span></div>`;
             } else if (m.tacticalPending) {
-                banner = '<div class="st-banner st-banner-yellow">Tactical allocation pending confirmation — review on map</div>';
+                banner = `<div class="st-banner st-banner-yellow"${anchor("first-tactical-pending")}>Tactical allocation pending confirmation — review on map</div>`;
             }
             patch(c.banner, banner);
 
             patch(c.bar, taskBar(m, s, activeTaskIds, isActive, urgency));
             patch(c.hist, histogram(m, s.elapsed));
             patch(c.plan, isActive ? taskPlan(m) : "");
-            patch(c.strat, allocating && ui ? strategicPanel(s, m) : "");
+            patch(c.strat, allocating && ui ? strategicPanel(s, m, first) : "");
         }
 
         function taskBar(m, s, activeIds, isActive, urgency) {
@@ -318,23 +331,27 @@ registerPanel("missionList", {
             return html + "</div>";
         }
 
-        function strategicPanel(s, m) {
+        function strategicPanel(s, m, first) {
             const modal = s.strategicModal, agent = s.config.mode === "agent";
             const showCards = agent && !ui.showManual;
             const loadedAll = allLoaded(modal);
-            let html = `<div class="st-strat${showCards && !loadedAll ? " loading" : ""}">`;
-            if (showCards) {
+            // The tutorial can lock the panel to the manual flow (first mission) or to the cards (second)
+            const forceManual = tut.active && tut.forceManual, forceAgent = tut.active && tut.forceAgent;
+            const anchor = (name) => first ? ` data-tutorial="${name}"` : "";
+            let html = `<div class="st-strat${showCards && !loadedAll && !forceManual ? " loading" : ""}"${anchor("first-strategic-panel")}>`;
+            if (showCards && forceManual) {
+                html += '<p class="st-xs" style="color:#6b7280;text-align:center;padding:8px 0;margin:0">Assistant suggestions are disabled for this practice round.</p>';
+            } else if (showCards) {
                 html += '<div class="st-cards">';
-                modal.strategies.forEach((st, i) => { html += strategyCard(st, i, s); });
+                modal.strategies.forEach((st, i) => { html += strategyCard(st, i, s, first && i === 0); });
                 if (!modal.strategies.length) html += '<p class="st-xs" style="grid-column:span 2;color:#6b7280;text-align:center">No feasible strategies with current reserve. Use manual allocation.</p>';
                 html += "</div>";
             } else {
                 html += manualPicker(s, m);
             }
-            if (agent) {
-                html += ui.showManual
-                    ? '<button class="st-link" data-act="to-cards">← Back to suggestions</button>'
-                    : `<button class="st-switch" data-act="to-manual">${ui.selectedIdx !== null ? "Edit this allocation" : "Set manually instead"}</button>`;
+            if (agent && !forceAgent) {
+                if (ui.showManual) { if (!forceManual) html += `<button class="st-link" data-act="to-cards"${anchor("first-manual-toggle")}>← Back to suggestions</button>`; }
+                else html += `<button class="st-switch" data-act="to-manual"${anchor("first-manual-toggle")}>${ui.selectedIdx !== null ? "Edit this allocation" : "Set manually instead"}</button>`;
             }
             const canApply = showCards ? ui.selectedIdx !== null && loadedAll : TYPES.some((t) => ui.manual[t] > 0);
             html += `<div class="st-actions"><button class="st-deploy" data-act="deploy" ${canApply ? "" : "disabled"}>${showCards ? "Deploy Selected" : "Deploy"}</button>`;
@@ -344,10 +361,11 @@ registerPanel("missionList", {
             return html + "</div></div>";
         }
 
-        function strategyCard(st, i, s) {
-            if (!ui.loaded.has(i)) return '<div class="st-scard wait"><div class="st-spin"></div><span>Analysing...</span></div>';
+        function strategyCard(st, i, s, first) {
+            const anchor = first ? ' data-tutorial="first-strategy-card"' : "";
+            if (!ui.loaded.has(i)) return `<div class="st-scard wait"${anchor}><div class="st-spin"></div><span>Analysing...</span></div>`;
             const sel = ui.selectedIdx === i;
-            let html = `<button class="st-scard${sel ? " sel" : ""}" data-act="pick" data-i="${i}"><h4>${sel ? '<span style="color:#60a5fa;font-size:12px">✓</span>' : ""}${esc(st.name)}</h4>`;
+            let html = `<button class="st-scard${sel ? " sel" : ""}" data-act="pick" data-i="${i}"${anchor}><h4>${sel ? '<span style="color:#60a5fa;font-size:12px">✓</span>' : ""}${esc(st.name)}</h4>`;
             if (s.config.testingMode && st.isBadSuggestion) html += `<div class="st-test-flag">⚠ TEST FAILURE: ${esc(st.badSuggestionType)}${st.badSuggestionColour ? " " + esc(st.badSuggestionColour) : ""}</div>`;
             html += `<p>${esc(st.description)}</p><div class="assets">`;
             const used = TYPES.filter((t) => st.assets[t] > 0);

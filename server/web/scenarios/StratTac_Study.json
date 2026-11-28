@@ -26,7 +26,7 @@
         "badge": "STRATEGIC",
         "accent": "#22d3ee",
         "frame": 5,
-        "overlays": [{"panel": "studyFlow"}],
+        "overlays": [{"panel": "studyFlow"}, {"panel": "tutorial"}],
         "layout": {"column": [
           {"panel": "header", "options": {"items": ["badge", "title", "session", "mode", "test", "spacer", "testControls", "clock", "score", "switchView", "snapshot"]}},
           {"row": [
@@ -43,7 +43,7 @@
         "badge": "TACTICAL",
         "accent": "#f59e0b",
         "frame": 5,
-        "overlays": [{"panel": "studyFlow", "options": {"role": "secondary"}}],
+        "overlays": [{"panel": "studyFlow", "options": {"role": "secondary"}}, {"panel": "tutorial", "options": {"role": "secondary"}}],
         "layout": {"column": [
           {"panel": "header", "options": {"tint": true, "items": ["badge", "title"]}},
           {"row": [

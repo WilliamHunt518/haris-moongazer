@@ -143,6 +143,9 @@ function createStore(ctx) {
         if (m) ctx.send({ type: "TACTICAL_ASSIGN_CHANGED", missionId: m.id, op, droneId, taskId, recoveryMode: st.mode === "recovery" });
     }
 
+    // The tutorial panel listens for these to advance its steps
+    const tut = (name, detail) => document.dispatchEvent(new CustomEvent("tutorial-" + name, { detail }));
+
     const api = {
         get: () => st,
         mission,
@@ -152,6 +155,7 @@ function createStore(ctx) {
             if (st.suggesting || st.suggestQueue.length) return;
             st.selectedId = id; st.key = null; st.synced = false;
             api.sync(st.state);
+            tut("mission-selected", id);
         },
         back() { stopReveal(); st.selectedId = null; st.key = null; st.synced = false; api.sync(st.state); },
 
@@ -276,6 +280,8 @@ function createStore(ctx) {
                 if (!existing.includes(taskId)) st.chainOrder = { ...st.chainOrder, [droneId]: [...existing, taskId] };
             }
             emit();
+            if (!chain) tut("drone-assigned", { droneId, taskId });
+            else if (!existing.includes(taskId)) tut("drone-chained", { droneId, taskId });
         },
         removeDrone(droneId, taskId) {
             log("remove", droneId, taskId);
@@ -302,6 +308,7 @@ function createStore(ctx) {
             const m = mission();
             if (!m || st.suggesting) return;
             st.suggestNote = null;
+            tut("suggest-clicked");
             const recovery = st.mode === "recovery";
             // Lockout with every task already staffed: keep the drones, just untangle the order (canonical order is acyclic)
             if (api.isLockout()) {
@@ -313,9 +320,9 @@ function createStore(ctx) {
                     return;
                 }
             }
-            st.suggesting = true; emit();
+            st.suggesting = true; emit(); tut("suggest-loading", true);
             const r = await ctx.send({ type: "TACTICAL_SUGGEST", missionId: m.id, recoveryMode: recovery, currentAssignments: recovery ? st.assignments : undefined });
-            st.suggesting = false;
+            st.suggesting = false; tut("suggest-loading", false);
             const now = mission();
             if (!r.ok || !now || now.id !== m.id) { emit(); return; }
             const suggestion = r.taskAssignments || {};

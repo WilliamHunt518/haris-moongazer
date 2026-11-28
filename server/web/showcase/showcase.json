@@ -69,6 +69,15 @@
       ]
     },
     {
+      "id": "strattac",
+      "title": "Strategic and tactical assistants",
+      "showcasing": "Trust in a two-tier team of assistants",
+      "description": "Search-and-rescue calls arrive one after another. Decide how many Fast, Lifter and Camera drones each mission gets, with a Strategic Assistant offering two strategies, then plan which drone does which task in a second window, where a Tactical Assistant can fill in the plan. Drones fail along the way. Includes the guided tutorial, the surveys and the full study flow.",
+      "image": "showcase/img/strattac.webp",
+      "file": "StratTac_Study.json",
+      "note": "Opens the strategic view. Open the tactical view in a second window from its start screen."
+    },
+    {
       "id": "programmer",
       "title": "Drone programmer",
       "showcasing": "Programmed agents under communication limits",

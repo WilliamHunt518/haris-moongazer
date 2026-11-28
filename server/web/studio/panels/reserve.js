@@ -6,6 +6,7 @@ registerPanel("reserve", {
     create(el, ctx) {
         el.style.flex = "none";
         const strip = div("st-reserve", el);
+        strip.dataset.tutorial = "reserve-strip";
         return {
             update(s) {
                 let html = '<span class="st-reserve-label">Reserve</span>';

@@ -19,7 +19,7 @@ and sends operator actions to `POST /strattac/action`, so no tab is in charge an
   "views": {
     "strategic": {
       "title": "SAR Command", "badge": "STRATEGIC", "accent": "#22d3ee", "frame": 5,
-      "overlays": [{"panel": "studyFlow"}],
+      "overlays": [{"panel": "studyFlow"}, {"panel": "tutorial"}],
       "layout": {"column": [
         {"panel": "header", "options": {"items": ["badge", "title", "session", "mode", "spacer", "clock", "score", "switchView"]}},
         {"row": [
@@ -37,7 +37,7 @@ and sends operator actions to `POST /strattac/action`, so no tab is in charge an
   panel. Any node can take `width` or `height` (pixels) or `flex` (share of the remaining space). `options` is passed
   to the panel.
 - `overlays` lists panels drawn over the whole view. Each starts hidden and shows itself when it has something to
-  show, as `studyFlow` does whenever the study is not playing.
+  show, as `studyFlow` does whenever the study is not playing. Later overlays sit above earlier ones.
 - A panel name that is not registered shows a placeholder, so a layout can be written before its panels exist.
 
 ## Built-in panels
@@ -49,6 +49,7 @@ and sends operator actions to `POST /strattac/action`, so no tab is in charge an
 | `missionList` | Mission cards grouped as incoming, committed, active and completed, each with its task bar, penalty histogram and task plan. *Allocate* opens the strategic panel in the card: the Strategic Assistant's Aggressive and Conservative cards, which "analyse" for their logged reveal delay before they can be picked, or a manual drone-count picker with a live ETA. | |
 | `strategicMap` | The whole study area: mission zones, drone routes and positions, task waypoints, the hub. Scroll to zoom, drag to pan, Low/Mid/Full detail button. Clicking a queued zone allocates it; clicking a committed or active one opens it in the tactical view. | `detail` (0–2, default 2), `cover` (default true: zoomed out, the map still fills the panel, as in the original). |
 | `studyFlow` | An overlay: the study's screens around the sessions, as in the original. The start screen (participant id, mode, assistant accuracy, complexity per session, seed, testing mode, lockout and failure-grace settings, and the *Participant Study* preset with the scenario pair, game swap and fast test), the background questionnaire, the surveys after each session (NASA-TLX, trust in each assistant, and usability after session 3), the break between sessions and the end screen with *Download Study Data*. The start screen takes its defaults from the scenario's `study` block and the original's URL parameters (`pid`, `seed`, `complexity`, `mode`, `eps_s`, `eps_t`, `tacticalMode`, `test`, `fullpaths`, `fixLockouts`, `failureGrace`, `numSessions`, `failuresLive`, `swapGames`), but a URL never starts a study by itself. | `role`: `primary` (default) for the screens, `secondary` for a "waiting" or "paused" notice in the other views. |
+| `tutorial` | An overlay: the original's 48-step guided tutorial, with a spotlight on the part each step explains, then the free-practice checklist. *Run Tutorial* and *Skip to Free Play* on the start screen start it with the original's fixed setup (participant `DEMO`, seed 77777, both assistants perfect). The step is kept on the server, so both views follow it; whichever view a step belongs to shows its card and moves it on, and the strategic view points across to the tactical one while a tactical step is showing. At the end, `studyFlow` shows the recap. See [The tutorial](#the-tutorial). | `role`: `primary` (default) for the strategic view's steps, `secondary` for the tactical view's. |
 | `missionQueue` | Tactical view: missions waiting for a tactical plan or a failure recovery, most urgent first, with their pending penalty. Clicking one opens it in the planner. | |
 | `tacticalToolbar` | Tactical view: the selected mission, its wait timer, and the *Suggest* (Tactical Assistant), *Reset*, *Abort Mission* and *Abandon Mission* buttons. | |
 | `tacticalPlanner` | Tactical view: the mission zone with its task waypoints. Drag a drone onto a task to assign it, back to the Unassigned tray to free it. The Tactical Assistant's plan is revealed one drone per second. | |
@@ -62,6 +63,22 @@ under `rules`, so they are never repeated in the page code.
 
 When one view opens another (for example a mission in the tactical view), an already open tab for that view is told
 over a `BroadcastChannel` instead of being reloaded. Panels listen with `ctx.onViewMessage(fn)`.
+
+## The tutorial
+
+The steps are in `core/tutorialSteps.js`, ported from the original with their text, spotlight targets and gates. A
+panel marks a spotlight target with `data-tutorial="<name>"` (for example `first-allocate-btn` on the first mission's
+*Allocate* button, `tac-deploy-btn` on *Deploy*). A must-do step moves on when the operator does the thing it asks:
+either the game state shows it (the step's `autoAdvanceWhen`), or a panel fires a page event the step names in
+`advanceOn`. The tactical panels fire `tutorial-mission-selected`, `tutorial-drone-assigned`,
+`tutorial-drone-chained`, `tutorial-plan-complete`, `tutorial-suggest-clicked` and `tutorial-suggest-loading`, and
+the mission list fires `tutorial-manual-selected`.
+
+What a step does in the game happens on the server, once per tutorial, when the step is reached: the fixed training
+team for the first mission, the demo drone failure (five seconds after *Watch the Deployment*), the failure that
+forces an abort, and the second mission. The two training missions are fixed, as in the original. Free practice
+starts when the walkthrough ends or is skipped. It brings in two more missions and ends after eight minutes, or once
+every checklist item is done and five minutes have passed, or when the operator clicks *Skip free play*.
 
 ## Study logs
 
@@ -115,7 +132,9 @@ Actions take the same names and fields as the original study's reducer: `START_S
 `CLOSE_STRATEGIC`, `PICK_STRATEGY`, `EDIT_MANUAL`, `PREVIEW_ALLOCATION`, `APPLY_STRATEGIC`, `TACTICAL_SUGGEST`,
 `TACTICAL_ASSIGN_CHANGED`, `CONFIRM_TACTICAL`, `OVERRIDE_TACTICAL`, `CONFIRM_FAILURE_RECOVERY`, `ABANDON_MISSION`,
 `RECALL_ASSET`, `SUBMIT_TRUST_PROBE`, `DISMISS_TRUST_PROBE`, `SUBMIT_DEMOGRAPHICS`, `SUBMIT_SURVEY`, `FINISH_SURVEYS`,
-`NEXT_SESSION`, `END_STUDY`, `RESET_STUDY`, and in testing mode `FORCE_MISSION_ARRIVAL`, `FORCE_DRONE_FAILURE` and
+`NEXT_SESSION`, `END_STUDY`, `RESET_STUDY`, the tutorial's `TUTORIAL_STEP` (`from`, `to` and the server-side steps
+`reached`; refused if another view moved the step first), `TUTORIAL_FINISH`, `FREE_PLAY_END`,
+`TUTORIAL_OVERRIDE_TEAM`, `TUTORIAL_FORCE_FAILURE` and `TUTORIAL_FORCE_ABANDON_SCENARIO`, and in testing mode `FORCE_MISSION_ARRIVAL`, `FORCE_DRONE_FAILURE` and
 `FORCE_SESSION_END`. A refused action returns `{"ok": false, "error": ...}` and changes nothing.
 
 ### Engine parity

@@ -68,6 +68,18 @@ jobs:
           curl -sf localhost:44101/strattac/results | grep -q '"participantId": "ci"'
           curl -sf localhost:44101/strattac/snapshot | grep -q '"snapshotType": "mid_session"'
           curl -sf -X POST -H 'Content-Type: application/json' -d '{"type":"NOT_AN_ACTION"}' localhost:44101/strattac/action | grep -q '"ok":false'
+          # The tutorial: its step lives on the server, a stale step is refused, and free play ends the session
+          act() { curl -sf -X POST -H 'Content-Type: application/json' -d "$1" localhost:44101/strattac/action; }
+          act '{"type":"RESET_STUDY"}' | grep -q '"ok":true'
+          act '{"type":"START_STUDY","config":{"participantId":"ci-tutorial","tutorialMode":true,"testingMode":true}}' | grep -q '"ok":true'
+          curl -sf localhost:44101/strattac/state | grep -q '"tutorial":{"active":true,"step":0'
+          act '{"type":"TUTORIAL_STEP","from":0,"to":1,"reached":[]}' | grep -q '"ok":true'
+          act '{"type":"TUTORIAL_STEP","from":0,"to":1,"reached":[]}' | grep -q '"ok":false'
+          act '{"type":"TUTORIAL_FINISH"}' | grep -q '"ok":true'
+          sleep 1
+          curl -sf localhost:44101/strattac/state | grep -q '"freePlay":{"active":true'
+          act '{"type":"FREE_PLAY_END"}' | grep -q '"ok":true'
+          curl -sf localhost:44101/strattac/state | grep -q '"phase":"survey"'
           curl -sf localhost:44101/studio.html | grep -q 'HARIS_MAPS_KEY = "ci-placeholder-key"'
       - name: Server output
         if: always()

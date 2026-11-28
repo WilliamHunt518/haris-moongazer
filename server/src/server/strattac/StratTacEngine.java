@@ -117,6 +117,17 @@ public class StratTacEngine {
     private BalancedRollState tacticalFailureRoll = new BalancedRollState();
     private final List<List<Map<String, Object>>> events = new ArrayList<>();
     private long eventSeq = 0;
+    // Tutorial (tutorialMode): the walkthrough's step is kept here so every tab shows the same one
+    private boolean tutorialActive = false;
+    private int tutorialStep = 0;
+    private final Set<String> tutorialFired = new LinkedHashSet<>();
+    private int tutorialSpawnsDue = 0;
+    private double failureDemoArmedAt = -1;
+    private boolean failureDemoDone = false;
+    private boolean freePlayActive = false;
+    private double freePlayStartAt = 0;
+    private int freePlayEventStart = 0;
+    private Double freePlayAllDoneAt = null;
     /** The browser that started the current session (START_STUDY / NEXT_SESSION carry it), for session_start. */
     private String clientUserAgent = "headless";
     private Object clientViewport = null;
@@ -183,6 +194,7 @@ public class StratTacEngine {
         if (m.get("fixLockouts") instanceof Boolean b) c.fixLockouts = b;
         if (m.get("failureGraceSeconds") instanceof Number n) c.failureGraceSeconds = Math.max(0, n.doubleValue());
         if (m.get("tutorialMode") instanceof Boolean b) c.tutorialMode = b;
+        if (m.get("skipToFreePlay") instanceof Boolean b) c.skipToFreePlay = b;
         if (m.get("numSessions") instanceof Number n) c.numSessions = Math.max(1, n.intValue());
         if (m.get("fullPathsOnHover") instanceof Boolean b) c.fullPathsOnHover = b;
         if (m.get("collectDemographics") instanceof Boolean b) c.collectDemographics = b;
@@ -1022,6 +1034,7 @@ public class StratTacEngine {
             sessionClockStarted = true;
             logSessionStart();
         }
+        tutorialTick(now);
 
         // 1. Spawn missions whose arrival time has passed
         List<Blueprint> toSpawn = new ArrayList<>();
@@ -1413,6 +1426,15 @@ public class StratTacEngine {
         strategicFailureRoll = new BalancedRollState();
         tacticalFailureRoll = new BalancedRollState();
         demographics = null;
+        tutorialActive = config.tutorialMode && !Boolean.TRUE.equals(config.skipToFreePlay);
+        tutorialStep = 0;
+        tutorialFired.clear();
+        failureDemoArmedAt = -1;
+        failureDemoDone = false;
+        freePlayActive = false;
+        freePlayAllDoneAt = null;
+        // The walkthrough opens on its first mission; "skip to free play" opens on two
+        tutorialSpawnsDue = config.tutorialMode ? (tutorialActive ? 1 : 2) : 0;
         if (studyLog != null) {
             try { studyLog.studyStarted(config); } catch (RuntimeException e) { logger.warning("StratTac study log failed to start: " + e); }
         }
@@ -1423,8 +1445,11 @@ public class StratTacEngine {
     private void beginSession(int n) {
         sessionNumber = n;
         String cx = complexityForSession(n);
+        List<Pt> keepOut = new ArrayList<>();
+        if (config.tutorialMode) { keepOut.add(TUTORIAL_FIRST.zoneCenter); keepOut.add(TUTORIAL_SECOND.zoneCenter); }
         pendingBlueprints = MissionGen.generateSessionPlan(new Rng(Rng.u32(config.seed ^ planSeedIndex(n))), cx,
-                SESSION_DURATION, new ArrayList<>());
+                SESSION_DURATION, keepOut);
+        if (config.tutorialMode) { pendingBlueprints.add(0, tutorialBlueprint(TUTORIAL_SECOND)); pendingBlueprints.add(0, tutorialBlueprint(TUTORIAL_FIRST)); }
         elapsed = 0; rawElapsed = 0; rawMicros = 0; sessionClockStarted = false;
         assets = createInitialAssets(cx);
         missions = new ArrayList<>();
@@ -1586,6 +1611,9 @@ public class StratTacEngine {
             }
             case "RESET_STUDY" -> {
                 phase = "setup";
+                tutorialActive = false;
+                freePlayActive = false;
+                tutorialSpawnsDue = 0;
                 sessionNumber = 0;
                 missions = new ArrayList<>();
                 strategicModal = null;
@@ -1663,12 +1691,264 @@ public class StratTacEngine {
                 if (cands.isEmpty()) throw new Refused("No drone to fail");
                 applyForcedDroneFailure(m, cands.get(0), List.of());
             }
+            case "TUTORIAL_STEP" -> {
+                requirePlaying();
+                if (!tutorialActive) throw new Refused("No tutorial is running");
+                int from = a.get("from") instanceof Number f ? f.intValue() : -1, to = a.get("to") instanceof Number t ? t.intValue() : -1;
+                if (from != tutorialStep) throw new Refused("The tutorial has already moved on");
+                tutorialStep = Math.max(0, to);
+                if (a.get("reached") instanceof List<?> ids) for (Object id : ids) tutorialEffect(String.valueOf(id));
+            }
+            case "TUTORIAL_FINISH" -> {
+                requirePlaying();
+                if (!tutorialActive) throw new Refused("No tutorial is running");
+                tutorialActive = false;
+                if (config.tutorialMode) startFreePlay();
+            }
+            case "FREE_PLAY_END" -> {
+                requirePlaying();
+                if (!freePlayActive) throw new Refused("Free play is not running");
+                freePlayActive = false;
+                endSession("forced");
+            }
+            case "TUTORIAL_OVERRIDE_TEAM" -> { requirePlaying(); if (!config.tutorialMode) throw new Refused("Only in the tutorial"); tutorialOverrideTeam(); }
+            case "TUTORIAL_FORCE_FAILURE" -> { requirePlaying(); if (!config.tutorialMode) throw new Refused("Only in the tutorial"); tutorialForceFailure(); }
+            case "TUTORIAL_FORCE_ABANDON_SCENARIO" -> { requirePlaying(); if (!config.tutorialMode) throw new Refused("Only in the tutorial"); tutorialForceAbandonScenario(); }
             case "FORCE_SESSION_END" -> {
                 if (!config.testingMode) throw new Refused("Only in testing mode");
                 requirePlaying();
                 endSession("forced");
             }
             default -> throw new Refused("Unknown action " + type);
+        }
+    }
+
+    // ── Tutorial ─────────────────────────────────────────────────────────────
+
+    // Fixed training missions. The first (T1 + T1 + T3 + T5) uses every drone type and its two T1s demonstrate
+    // chaining; the second (T2 + T2 + T4) makes the two strategy cards differ visibly.
+    private static final Blueprint TUTORIAL_FIRST = blueprint("T001", "C", new int[]{1, 1, 3, 5}, new Pt(220, 180),
+            new Pt(200, 155), new Pt(248, 162), new Pt(255, 205), new Pt(195, 220));
+    private static final Blueprint TUTORIAL_SECOND = blueprint("T002", "D", new int[]{2, 2, 4}, new Pt(700, 250),
+            new Pt(684, 210), new Pt(730, 215), new Pt(705, 295));
+    private static final double FREE_PLAY_MIN = 300, FREE_PLAY_MAX = 480;
+
+    private static Blueprint blueprint(String id, String cat, int[] types, Pt centre, Pt... wps) {
+        Blueprint b = new Blueprint();
+        b.id = id; b.category = cat; b.taskTypes = types; b.zoneCenter = centre; b.waypoints = new ArrayList<>(List.of(wps));
+        return b;
+    }
+
+    private static Blueprint tutorialBlueprint(Blueprint t) {
+        Blueprint b = blueprint(t.id, t.category, t.taskTypes.clone(), t.zoneCenter.copy());
+        for (Pt p : t.waypoints) b.waypoints.add(p.copy());
+        return b;
+    }
+
+    /** Spawns the next pending blueprint now (FORCE_MISSION_ARRIVAL without the testing-mode check). */
+    private void spawnNextNow() {
+        if (pendingBlueprints.isEmpty()) return;
+        Blueprint bp = pendingBlueprints.remove(0);
+        bp.arrivalTime = elapsed;
+        Mission m = spawnMission(bp);
+        missions.add(m);
+        logEvent(missionArrivedPayload(m, null));
+    }
+
+    /** What entering a tutorial step does on the server, once per study (the original fired these from the page). */
+    private void tutorialEffect(String id) {
+        if (!tutorialFired.add(id)) return;
+        switch (id) {
+            case "tactical-pending" -> tutorialOverrideTeam();
+            case "abort-explain" -> tutorialForceAbandonScenario();
+            case "agent-intro" -> spawnNextNow();
+            case "failure-incoming" -> failureDemoArmedAt = elapsed;
+            default -> { }
+        }
+    }
+
+    private void tutorialTick(double now) {
+        if (!config.tutorialMode) return;
+        while (tutorialSpawnsDue > 0) {
+            tutorialSpawnsDue--;
+            spawnNextNow();
+            if (!tutorialActive && !freePlayActive) startFreePlayClock();
+        }
+        // The demo failure lands 5 s after the failure-incoming step, once a drone is out working
+        if (tutorialActive && failureDemoArmedAt >= 0 && !failureDemoDone && now >= failureDemoArmedAt + 5) {
+            boolean pending = false, working = false;
+            for (Mission m : missions) if (m.failureRecoveryPending) pending = true;
+            for (Mission m : missions) if ("active".equals(m.status))
+                for (Asset x : assets) if (m.id.equals(x.currentMissionId) && "deployed".equals(x.status) && x.currentTaskId != null) working = true;
+            if (pending) failureDemoDone = true;
+            else if (working) { failureDemoDone = true; tutorialForceFailure(); }
+        }
+        if (freePlayActive) {
+            boolean allDone = true;
+            for (Map<String, Object> ach : freePlayAchievements()) if (!Boolean.TRUE.equals(ach.get("done"))) allDone = false;
+            if (allDone && now >= freePlayStartAt + FREE_PLAY_MIN && freePlayAllDoneAt == null) freePlayAllDoneAt = now;
+            if (now >= freePlayStartAt + FREE_PLAY_MAX || (freePlayAllDoneAt != null && now >= freePlayAllDoneAt + 2.2)) {
+                freePlayActive = false;
+                endSession("forced");
+            }
+        }
+    }
+
+    private void startFreePlay() {
+        startFreePlayClock();
+        spawnNextNow();
+        spawnNextNow();
+    }
+
+    private void startFreePlayClock() {
+        freePlayActive = true;
+        freePlayStartAt = elapsed;
+        freePlayAllDoneAt = null;
+        int idx = Math.max(0, sessionNumber - 1);
+        freePlayEventStart = idx < events.size() ? events.get(idx).size() : 0;
+    }
+
+    /** The free-play checklist, from the events logged since free play began. */
+    private List<Map<String, Object>> freePlayAchievements() {
+        boolean manual = false, agent = false, override = false, chain = false;
+        int idx = Math.max(0, sessionNumber - 1);
+        List<Map<String, Object>> evs = idx < events.size() ? events.get(idx) : List.of();
+        for (int i = Math.min(freePlayEventStart, evs.size()); i < evs.size(); i++) {
+            Map<String, Object> e = evs.get(i);
+            Object type = e.get("type");
+            if ("strategic_choice".equals(type)) { if ("manual".equals(e.get("choiceType"))) manual = true; else agent = true; }
+            if ("tactical_confirmed".equals(type)) {
+                if (Boolean.TRUE.equals(e.get("modifiedFromAgentPlan"))) override = true;
+                if (Boolean.TRUE.equals(e.get("chainingUsed"))) chain = true;
+            }
+        }
+        List<Map<String, Object>> out = new ArrayList<>();
+        out.add(ach("manual_alloc", "Perform a manual strategic allocation", manual));
+        out.add(ach("agent_alloc", "Accept a Strategic Assistant strategy", agent));
+        out.add(ach("override_tactical", "Override a tactical plan", override));
+        out.add(ach("chain_drone", "Chain a drone through two tasks", chain));
+        return out;
+    }
+
+    private static Map<String, Object> ach(String id, String label, boolean done) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", id); m.put("label", label); m.put("done", done);
+        return m;
+    }
+
+    private Map<String, Object> tutorialSnapshot() {
+        Map<String, Object> t = new LinkedHashMap<>();
+        t.put("active", tutorialActive);
+        t.put("step", tutorialStep);
+        Map<String, Object> fp = new LinkedHashMap<>();
+        fp.put("active", freePlayActive);
+        if (freePlayActive) {
+            fp.put("secondsLeft", Math.max(0, FREE_PLAY_MAX - (elapsed - freePlayStartAt)));
+            fp.put("canFinish", elapsed >= freePlayStartAt + FREE_PLAY_MIN);
+            fp.put("achievements", freePlayAchievements());
+        }
+        t.put("freePlay", fp);
+        return t;
+    }
+
+    private List<Asset> onMissionDrones(Mission m) {
+        List<Asset> out = new ArrayList<>();
+        for (Asset a : assets) if (m.id.equals(a.currentMissionId) && "deployed".equals(a.status)) out.add(a);
+        return out;
+    }
+
+    private static List<Task> unfinishedTasks(Mission m) {
+        List<Task> out = new ArrayList<>();
+        for (Task t : m.tasks) if (!"completed".equals(t.status) && !"failed".equals(t.status)) out.add(t);
+        return out;
+    }
+
+    /** Swaps the first training mission's team for a fixed 2 Fast + 1 Lifter + 1 Camera, so every planner control can be practised. */
+    private void tutorialOverrideTeam() {
+        Mission mission = null;
+        for (Mission m : missions) if (m.tacticalPending && m.pendingAllocation != null) { mission = m; break; }
+        if (mission == null) return;
+        PendingAllocation pending = mission.pendingAllocation;
+        double now = elapsed;
+        Set<String> oldPool = new LinkedHashSet<>(pending.dronePool);
+        for (Asset a : assets) if (oldPool.contains(a.id)) {
+            a.status = "available"; a.currentMissionId = null; a.currentTaskId = null;
+            a.position = HUB.copy(); a.travelFrom = HUB.copy(); a.targetPosition = HUB.copy(); a.availableAt = now;
+        }
+        List<Asset> avail = availableExcludingPending(missions, mission.id);
+        Comp want = new Comp(2, 1, 1), got = new Comp();
+        List<String> pool = new ArrayList<>();
+        for (String type : Model.TYPES) for (Asset a : avail) if (a.type.equals(type) && got.get(type) < want.get(type)) { got.inc(type); pool.add(a.id); }
+        if (pool.isEmpty()) return;
+        List<Task> sorted = new ArrayList<>(mission.tasks);
+        sorted.sort((x, y) -> y.type - x.type);
+        List<String> taskOrder = new ArrayList<>();
+        for (Task t : sorted) taskOrder.add(t.id);
+        List<Asset> poolAssets = new ArrayList<>();
+        Set<String> poolSet = new LinkedHashSet<>(pool);
+        for (Asset a : assets) if (poolSet.contains(a.id)) poolAssets.add(a);
+        List<TaskAssignment> asg = greedyAssign(mission.tasks, poolAssets, got, now, null, taskOrder);
+        Map<String, List<String>> map = new LinkedHashMap<>();
+        double expected = pending.expectedCompletionTime;
+        if (!asg.isEmpty()) {
+            expected = Double.NEGATIVE_INFINITY;
+            for (TaskAssignment x : asg) { map.put(x.taskId, x.assetIds); expected = Math.max(expected, x.startTime + x.baseTime); }
+        }
+        launchToLoiter(mission, pool, now);
+        pending.composition = got;
+        pending.dronePool = pool;
+        pending.taskAssignments = map;
+        pending.taskOrder = taskOrder;
+        pending.expectedCompletionTime = expected;
+    }
+
+    /** The recoverable demo failure: a working drone whose loss leaves every remaining task coverable by the rest. */
+    private void tutorialForceFailure() {
+        Mission mission = null;
+        for (Mission m : missions) if ("active".equals(m.status) && !m.failureRecoveryPending) { mission = m; break; }
+        if (mission == null) return;
+        List<Asset> working = new ArrayList<>();
+        for (Asset a : assets) if (mission.id.equals(a.currentMissionId) && "deployed".equals(a.status) && a.currentTaskId != null) working.add(a);
+        if (working.isEmpty()) return;
+        List<Asset> pool = onMissionDrones(mission);
+        List<Task> remaining = unfinishedTasks(mission);
+        List<Asset> recoverable = new ArrayList<>();
+        for (Asset d : working) {
+            List<Asset> survivors = new ArrayList<>(pool);
+            survivors.removeIf(x -> x.id.equals(d.id));
+            boolean ok = true;
+            for (Task t : remaining) if (!Tactical.taskCoverableBy(t, survivors)) { ok = false; break; }
+            if (ok) recoverable.add(d);
+        }
+        Asset failed = executingIn(mission, recoverable);
+        if (failed == null && !recoverable.isEmpty()) failed = recoverable.get(0);
+        if (failed == null) failed = executingIn(mission, working);
+        if (failed == null) failed = working.get(0);
+        applyForcedDroneFailure(mission, failed, List.of());
+    }
+
+    private static Asset executingIn(Mission m, List<Asset> list) {
+        for (Asset d : list) { Task t = m.task(d.currentTaskId); if (t != null && "executing".equals(t.status)) return d; }
+        return null;
+    }
+
+    /** The unrecoverable demo failure: a drone (a Lifter first) whose loss strands a task no survivor can cover. */
+    private void tutorialForceAbandonScenario() {
+        Mission mission = null;
+        for (Mission m : missions) if ("active".equals(m.status) && !m.failureRecoveryPending) { mission = m; break; }
+        if (mission == null) return;
+        List<Asset> pool = onMissionDrones(mission);
+        List<Task> remaining = unfinishedTasks(mission);
+        List<Asset> cands = new ArrayList<>(pool);
+        cands.sort(Comparator.comparingInt(x -> "Red".equals(x.type) ? 0 : 1));
+        for (Asset d : cands) {
+            List<Asset> survivors = new ArrayList<>(pool);
+            survivors.removeIf(x -> x.id.equals(d.id));
+            List<String> stranded = new ArrayList<>();
+            for (Task t : remaining) if (!Tactical.taskCoverableBy(t, survivors)) stranded.add(t.id);
+            if (stranded.isEmpty()) continue;
+            applyForcedDroneFailure(mission, d, stranded);
+            return;
         }
     }
 
@@ -2157,6 +2437,7 @@ public class StratTacEngine {
         out.put("categoryForecast", categoryForecast);
         out.put("strategicModal", strategicModal);
         out.put("trustProbeActive", trustProbeActive);
+        out.put("tutorial", tutorialSnapshot());
         out.put("reserve", reserveCount(true));
         out.put("eventCount", eventSeq);
         return GSON.toJson(out);

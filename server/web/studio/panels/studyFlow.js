@@ -6,6 +6,8 @@
 import { registerPanel } from "../core/registry.js";
 import { esc } from "../core/study.js";
 import { DEMOGRAPHICS, SURVEYS, surveysForSession, COMPLEXITIES } from "../core/surveys.js";
+import { RECAP } from "../core/tutorialSteps.js";
+import { tutorialText } from "./tutorial.js";
 
 const STUDY_SEED = 42;
 const FAILURE_GRACE_SECONDS = 30;
@@ -119,6 +121,10 @@ registerPanel("studyFlow", {
                 + '<button type="button" class="st-btn st-btn-big st-btn-emerald" data-act="beginStudy">Begin Participant Study →</button></div>'
                 + '<div class="st-flow-or"><span>advanced / single-session</span></div>'
                 + '<button type="button" class="st-btn st-btn-big st-btn-primary" data-act="startStudy">Start Study</button>'
+                + '<div class="st-flow-or"><span>or</span></div>'
+                + '<button type="button" class="st-btn st-btn-big st-btn-indigo" data-act="tutorial">Run Tutorial</button>'
+                + '<button type="button" class="st-btn st-btn-indigo-dark st-wide" data-act="freePlay">Skip to Free Play</button>'
+                + '<p class="st-flow-note">Guided walkthrough of every interface element — no configuration needed.</p>'
                 + '<button type="button" class="st-btn st-btn-big" data-act="openTactical">Open Tactical Planner →</button>'
                 + '<p class="st-flow-note">Open the tactical view on a second screen before starting.</p>'
                 + "</div></div>";
@@ -170,6 +176,28 @@ registerPanel("studyFlow", {
                 : { ...baseConfig(), complexity: s.sessionComplexities[0], sessionComplexities: s.sessionComplexities.slice(0, s.numSessions), seed,
                     testingMode: s.testingMode, numSessions: s.numSessions };
             send({ type: "START_STUDY", config });
+        }
+
+        // The tutorial's fixed setup, as the original: both assistants perfect, so training sets no trust prior
+        function startTutorial(freePlay) {
+            start.error = "";
+            send({ type: "START_STUDY", config: {
+                participantId: "DEMO", condition: "none", mode: "agent", complexity: "balanced", seed: 77777,
+                agentErrorRate: 0, epsilonTactical: 0, tacticalMode: freePlay ? "greedy" : "plan-all",
+                testingMode: true, tutorialMode: true, fixLockouts: true, numSessions: 1,
+                ...(freePlay ? { skipToFreePlay: true, fullPathsOnHover: true } : {}),
+            } });
+        }
+        function drawRecap() {
+            const h = '<div class="st-flow-card st-flow-wide"><div class="st-flow-pad st-tut-recaps">'
+                + '<div class="st-center"><p class="st-flow-kicker" style="color:#818cf8">Tutorial complete</p><h2>A quick recap</h2>'
+                + "<p class=\"st-flow-note\">Here are the key things you've learned so far.</p></div>"
+                + RECAP.map((r) => `<div class="st-tut-recap"><h3>${esc(r.title)}</h3><p>${tutorialText(ctx, r.body)}</p></div>`).join("")
+                + "<div class=\"st-tut-recap key\"><h3>You're in control</h3><p>You are free to use any combination of strategies — automated and manual — exactly as you "
+                + "prefer. Accept an assistant's suggestion, tweak it, or plan a mission entirely by hand. There is no single right approach: "
+                + "do whatever helps you respond most effectively.</p></div>"
+                + '<button type="button" class="st-btn st-btn-big st-btn-indigo" data-act="newStudy">Finish</button></div></div>';
+            el.innerHTML = h;
         }
 
         // ── Background questionnaire ─────────────────────────────────────────
@@ -294,6 +322,8 @@ registerPanel("studyFlow", {
             }
             else if (act === "randomise") { start.seed = String(randomSeed()); drawStart(); }
             else if (act === "startStudy") startStudy(false);
+            else if (act === "tutorial") startTutorial(false);
+            else if (act === "freePlay") startTutorial(true);
             else if (act === "beginStudy") startStudy(true);
             else if (act === "openTactical") ctx.openView("tactical");
             else if (act === "answer") {
@@ -357,9 +387,11 @@ registerPanel("studyFlow", {
                 clearTimeout(breakTimer);
                 if (s.phase === "setup") { start.error = ""; drawStart(); }
                 else if (s.phase === "demographics") { ui = { responses: {} }; drawDemographics(s); }
+                else if (s.phase === "survey" && s.config.tutorialMode) drawRecap();
                 else if (s.phase === "survey") { const names = surveysForSession(s.sessionNumber); ui = { page: 0, responses: surveyResponses(names[0]) }; drawSurvey(s); }
                 else if (s.phase === "between") { ui = { until: Date.now() + (s.config.fastTest ? 3 : BREAK_SECONDS) * 1000 }; drawBetween(s); }
                 else if (s.phase === "done") drawDone(s);
+                el.scrollTop = 0;   // a new screen starts at its top, wherever the last one was scrolled
             },
             destroy() { clearTimeout(breakTimer); },
         };

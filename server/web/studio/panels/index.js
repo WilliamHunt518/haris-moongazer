@@ -5,3 +5,4 @@ import "./missionList.js";
 import "./strategicMap.js";
 import "./tactical.js";
 import "./studyFlow.js";
+import "./tutorial.js";

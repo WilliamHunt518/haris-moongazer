@@ -9,6 +9,7 @@ registerPanel("header", {
         const items = options.items || ["badge", "title", "session", "clock", "switchView"];
         const bar = document.createElement("div");
         bar.className = "st-header" + (options.tint ? " st-tinted" : "");
+        bar.dataset.tutorial = "header";
         el.appendChild(bar);
         el.style.flex = "none";
         const parts = {};
@@ -41,9 +42,10 @@ registerPanel("header", {
                     button("End Study", "", "Skip straight to the end screen", () => ctx.send({ type: "END_STUDY" })));
             } else if (item === "clock") {
                 if (!items.includes("spacer")) bar.appendChild(make("span", "st-spacer"));
-                add("clock", make("span", "st-clock"));
+                add("clock", make("span", "st-clock")).dataset.tutorial = "timer";
             } else if (item === "score") {
                 const sc = add("score", make("span", "st-score"));
+                sc.dataset.tutorial = "score";
                 sc.innerHTML = '<span>Score: <b></b></span><span style="font-size:12px;color:#22c55e" title="Completion points earned"></span><span style="font-size:12px;color:#f87171" title="Accumulated wait penalty"></span>';
             } else if (item === "switchView" && ctx.config.interface) {
                 // A button per other view, opening it in its own tab
