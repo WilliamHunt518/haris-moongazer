@@ -270,6 +270,15 @@ Not carried over from the branch: the earlier n-back and cooldown-style episode 
 A `strattac` block turns on the strategic/tactical drone study engine, and an `interface` block lays out its views in
 [HARIS Studio](studio.md). See `StratTac_Study.json`.
 
+| Key | Meaning |
+|---|---|
+| `world` | World size in study units (1400 × 800) and the hub position. |
+| `map` | Map type and the latitude/longitude box the world is drawn over. Without a Maps key the views show a grid. |
+| `droneTypes` | The three drone types: internal id (`Blue`, `Red`, `Green`), operator-facing label (Fast, Lifter, Camera), colour, speed in units per second, fleet count and icon. |
+| `study` | Defaults for the study start screen: `complexity` (`balanced`, `strategic`, `tactical`, `full`, `quick`), `sessionComplexities`, `seed`, `numSessions`, `mode` (`agent` or `no-agent`), `tacticalMode` (`plan-all` or `greedy`), `fixLockouts`, `failureGraceSeconds`, `agentFailuresEnabled`, `agentErrorRate` (the Strategic Assistant's ε), `epsilonTactical`, `swapGames`, `collectDemographics`, `testingMode`. Values sent with `START_STUDY` override them. |
+
+The engine (`server/src/server/strattac/`) is a port of the original study's reducer. Its mission generator and both assistants give the same answers as the original for the same seed, and a scripted operator gets the same session outcomes. See [studio.md](studio.md#engine-parity).
+
 ## Dynamic tasks and abstraction
 
 ### `missionController`

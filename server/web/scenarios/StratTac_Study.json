@@ -11,7 +11,7 @@
       "type": "terrain",
       "bbox": {"north": 54.5986, "south": 54.4917, "west": -3.4715, "east": -3.1159}
     },
-    "sessionSeconds": 480,
+    "study": {"complexity": "strategic", "seed": 42, "numSessions": 1, "mode": "agent", "fixLockouts": true, "agentFailuresEnabled": false},
     "droneTypes": [
       {"id": "Blue",  "label": "Fast",   "short": "F", "colour": "#3b82f6", "text": "#60a5fa", "speed": 11, "count": 11, "icon": "studio/icons/drone-blue.svg"},
       {"id": "Red",   "label": "Lifter", "short": "L", "colour": "#ef4444", "text": "#f87171", "speed": 10, "count": 11, "icon": "studio/icons/drone-red.svg"},

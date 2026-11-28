@@ -44,18 +44,18 @@ registerPanel("header", {
                 }
             }
         }
-        // Until the study start screen exists, the header can start a session
+        // Until the study start screen exists (PR 6), the header starts a quick study with the scenario defaults
         const start = document.createElement("button");
         start.className = "st-btn st-btn-primary";
-        start.textContent = "Start session";
+        start.textContent = "Start study";
         start.hidden = true;
-        start.onclick = () => ctx.send({ type: "START_SESSION" });
+        start.onclick = () => ctx.send({ type: "START_STUDY", config: {} });
         bar.appendChild(start);
         return {
             update(s) {
                 if (parts.session) parts.session.textContent = s.sessionNumber ? "Session " + s.sessionNumber : "";
-                if (parts.clock) parts.clock.textContent = fmtClock(s.sessionSeconds - s.elapsed);
-                start.hidden = s.phase !== "setup";
+                if (parts.clock) parts.clock.textContent = fmtClock(s.sessionDuration - s.elapsed);
+                start.hidden = s.phase !== "setup" && s.phase !== "done";
             },
         };
     },

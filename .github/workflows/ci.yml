@@ -60,6 +60,9 @@ jobs:
           curl -sf localhost:44101/mode/page | grep -q 'studio.html'
           curl -sf localhost:44101/strattac/config | grep -q '"enabled": true'
           curl -sf localhost:44101/strattac/state | grep -q '"phase":"setup"'
+          curl -sf -X POST -H 'Content-Type: application/json' -d '{"type":"START_STUDY","config":{}}' localhost:44101/strattac/action | grep -q '"ok":true'
+          curl -sf localhost:44101/strattac/state | grep -q '"phase":"playing"'
+          curl -sf -X POST -H 'Content-Type: application/json' -d '{"type":"NOT_AN_ACTION"}' localhost:44101/strattac/action | grep -q '"ok":false'
           curl -sf localhost:44101/studio.html | grep -q 'HARIS_MAPS_KEY = "ci-placeholder-key"'
       - name: Server output
         if: always()

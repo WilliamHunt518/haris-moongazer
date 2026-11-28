@@ -62,3 +62,35 @@ an SVG whose units are world units, so they never handle latitude and longitude.
 
 `strattac.droneTypes` lists each type with an internal `id` (kept in logs), the `label` and `short` letter operators
 see, its `colour`, `speed` (world units per second), `count` in the fleet, and `icon`.
+
+## The study engine
+
+`server/src/server/strattac/` holds the StratTac game: mission generation (`MissionGen`), the Strategic Assistant
+(`Copilot`), the Tactical Assistant and recovery planner (`Tactical`), and the game loop and actions
+(`StratTacEngine`). The simulator steps it every tick, and views send it actions through `POST /strattac/action`.
+
+Actions take the same names and fields as the original study's reducer: `START_STUDY`, `OPEN_STRATEGIC`,
+`CLOSE_STRATEGIC`, `PICK_STRATEGY`, `EDIT_MANUAL`, `PREVIEW_ALLOCATION`, `APPLY_STRATEGIC`, `TACTICAL_SUGGEST`,
+`TACTICAL_ASSIGN_CHANGED`, `CONFIRM_TACTICAL`, `OVERRIDE_TACTICAL`, `CONFIRM_FAILURE_RECOVERY`, `ABANDON_MISSION`,
+`RECALL_ASSET`, `SUBMIT_TRUST_PROBE`, `DISMISS_TRUST_PROBE`, `SUBMIT_DEMOGRAPHICS`, `SUBMIT_SURVEY`, `FINISH_SURVEYS`,
+`NEXT_SESSION`, `END_STUDY`, `RESET_STUDY`, and in testing mode `FORCE_MISSION_ARRIVAL`, `FORCE_DRONE_FAILURE` and
+`FORCE_SESSION_END`. A refused action returns `{"ok": false, "error": ...}` and changes nothing.
+
+### Engine parity
+
+The port keeps the original's arithmetic (the same seeded Mulberry32 generator, JavaScript's `Math.hypot`, stable sorts
+and insertion-ordered maps), and the session clock advances in fixed 0.1 s ticks. Checked against the original
+`study-v1.13` code:
+
+- Mission plans: identical for 6,064 missions (5 complexities × 60 seeds × 2 game indices).
+- Strategic Assistant cards: identical for 2,466 cards, 810 of them with the ε failure forced on.
+- Tactical Assistant plans: identical for 3,204 plans, plan-all and greedy.
+- Whole sessions with a scripted operator (always takes the Aggressive card, confirms the tactical plan, recovers
+  failures with Suggest): identical score, penalty, completions, task failures, drone failures and lockouts in all 80
+  sessions tried (4 scenarios × 20 seeds, 403 drone failures between them).
+
+Run the check yourself with [`tools/strattac-parity/run.sh`](../tools/strattac-parity/README.md) and a checkout of the
+original study code.
+
+Not yet ported: the tutorial actions (PR 7) and the reducer's older `ACCEPT_RECOVERY`, `APPLY_MANUAL_RECOVERY` and
+`REPRIORITISE_TASK` actions, which the original's own interface no longer sends.
