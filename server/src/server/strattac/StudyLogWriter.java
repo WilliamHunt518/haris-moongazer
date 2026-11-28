@@ -21,7 +21,7 @@ import java.util.logging.Logger;
  * For each study started, in the log directory (log/strattac by default):
  *   <stamp>_<participant>_<condition>_<seed>.jsonl       every event, one JSON object per line, written as it happens
  *   study_<participant>_<condition>_<seed>_<stamp>.json  the participant file (the original's "Download Data"),
- *                                                        rewritten at the end of every session and at the end
+ *                                                        rewritten when each session ends, after its surveys and at the end
  * The stamp keeps a re-run with the same participant id from overwriting an earlier one.
  */
 public class StudyLogWriter implements StratTacEngine.StudyLog {

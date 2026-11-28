@@ -12,6 +12,14 @@ function size(el, node) {
     if (node.flex != null) el.style.flex = String(node.flex) + " 1 0";
 }
 
+// A view's "overlays" are panels drawn over the whole view (for example the study's start screen and surveys).
+// Each gets a full-size host that starts hidden; the panel shows it when it has something to show.
+export function buildOverlay(parent, node, ctx, instances) {
+    const host = buildPanel(parent, node, ctx, instances, "st-overlay");
+    host.hidden = true;
+    return host;
+}
+
 export function buildLayout(parent, node, ctx, instances) {
     if (node.row || node.column) {
         const el = document.createElement("div");
@@ -21,10 +29,15 @@ export function buildLayout(parent, node, ctx, instances) {
         parent.appendChild(el);
         return el;
     }
-    const cell = document.createElement("div");
-    cell.className = "st-cell";
-    cell.dataset.panel = node.panel;
+    const cell = buildPanel(parent, node, ctx, instances, "st-cell");
     size(cell, node);
+    return cell;
+}
+
+function buildPanel(parent, node, ctx, instances, cls) {
+    const cell = document.createElement("div");
+    cell.className = cls;
+    cell.dataset.panel = node.panel;
     parent.appendChild(cell);
     const def = getPanel(node.panel);
     if (!def) {

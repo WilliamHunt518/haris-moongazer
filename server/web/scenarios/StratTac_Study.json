@@ -26,8 +26,9 @@
         "badge": "STRATEGIC",
         "accent": "#22d3ee",
         "frame": 5,
+        "overlays": [{"panel": "studyFlow"}],
         "layout": {"column": [
-          {"panel": "header", "options": {"items": ["badge", "title", "session", "mode", "test", "spacer", "testControls", "clock", "score", "switchView", "snapshot", "start"]}},
+          {"panel": "header", "options": {"items": ["badge", "title", "session", "mode", "test", "spacer", "testControls", "clock", "score", "switchView", "snapshot"]}},
           {"row": [
             {"column": [
               {"panel": "reserve"},
@@ -42,6 +43,7 @@
         "badge": "TACTICAL",
         "accent": "#f59e0b",
         "frame": 5,
+        "overlays": [{"panel": "studyFlow", "options": {"role": "secondary"}}],
         "layout": {"column": [
           {"panel": "header", "options": {"tint": true, "items": ["badge", "title"]}},
           {"row": [

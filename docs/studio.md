@@ -19,6 +19,7 @@ and sends operator actions to `POST /strattac/action`, so no tab is in charge an
   "views": {
     "strategic": {
       "title": "SAR Command", "badge": "STRATEGIC", "accent": "#22d3ee", "frame": 5,
+      "overlays": [{"panel": "studyFlow"}],
       "layout": {"column": [
         {"panel": "header", "options": {"items": ["badge", "title", "session", "mode", "spacer", "clock", "score", "switchView"]}},
         {"row": [
@@ -35,16 +36,19 @@ and sends operator actions to `POST /strattac/action`, so no tab is in charge an
 - `layout` is a tree. `{"row": [...]}` and `{"column": [...]}` arrange their children; `{"panel": "name"}` places a
   panel. Any node can take `width` or `height` (pixels) or `flex` (share of the remaining space). `options` is passed
   to the panel.
+- `overlays` lists panels drawn over the whole view. Each starts hidden and shows itself when it has something to
+  show, as `studyFlow` does whenever the study is not playing.
 - A panel name that is not registered shows a placeholder, so a layout can be written before its panels exist.
 
 ## Built-in panels
 
 | Panel | Shows | Options |
 |---|---|---|
-| `header` | View badge and title, session, mode, clock, score, buttons to the other views. In testing mode, researcher shortcuts (new mission, force a failure, end the session or study). | `items`: any of `badge`, `title`, `session`, `mode`, `test`, `spacer`, `testControls`, `clock`, `score`, `switchView`, `snapshot` (downloads a mid-session snapshot), `start`, in display order. `tint`: amber-tinted bar, as in the tactical view. |
+| `header` | View badge and title, session, mode, clock, score, buttons to the other views. In testing mode, researcher shortcuts (new mission, force a failure, end the session or study). | `items`: any of `badge`, `title`, `session`, `mode`, `test`, `spacer`, `testControls`, `clock`, `score`, `switchView`, `snapshot` (downloads a mid-session snapshot), in display order. `tint`: amber-tinted bar, as in the tactical view. |
 | `reserve` | Drones of each type at the hub, how many are out, and the forecast mix of incoming mission categories. | |
 | `missionList` | Mission cards grouped as incoming, committed, active and completed, each with its task bar, penalty histogram and task plan. *Allocate* opens the strategic panel in the card: the Strategic Assistant's Aggressive and Conservative cards, which "analyse" for their logged reveal delay before they can be picked, or a manual drone-count picker with a live ETA. | |
 | `strategicMap` | The whole study area: mission zones, drone routes and positions, task waypoints, the hub. Scroll to zoom, drag to pan, Low/Mid/Full detail button. Clicking a queued zone allocates it; clicking a committed or active one opens it in the tactical view. | `detail` (0–2, default 2), `cover` (default true: zoomed out, the map still fills the panel, as in the original). |
+| `studyFlow` | An overlay: the study's screens around the sessions, as in the original. The start screen (participant id, mode, assistant accuracy, complexity per session, seed, testing mode, lockout and failure-grace settings, and the *Participant Study* preset with the scenario pair, game swap and fast test), the background questionnaire, the surveys after each session (NASA-TLX, trust in each assistant, and usability after session 3), the break between sessions and the end screen with *Download Study Data*. The start screen takes its defaults from the scenario's `study` block and the original's URL parameters (`pid`, `seed`, `complexity`, `mode`, `eps_s`, `eps_t`, `tacticalMode`, `test`, `fullpaths`, `fixLockouts`, `failureGrace`, `numSessions`, `failuresLive`, `swapGames`), but a URL never starts a study by itself. | `role`: `primary` (default) for the screens, `secondary` for a "waiting" or "paused" notice in the other views. |
 | `missionQueue` | Tactical view: missions waiting for a tactical plan or a failure recovery, most urgent first, with their pending penalty. Clicking one opens it in the planner. | |
 | `tacticalToolbar` | Tactical view: the selected mission, its wait timer, and the *Suggest* (Tactical Assistant), *Reset*, *Abort Mission* and *Abandon Mission* buttons. | |
 | `tacticalPlanner` | Tactical view: the mission zone with its task waypoints. Drag a drone onto a task to assign it, back to the Unassigned tray to free it. The Tactical Assistant's plan is revealed one drone per second. | |
@@ -69,7 +73,7 @@ by default (the `logDir` key):
 | File | Contents |
 |---|---|
 | `<time>_<participant>_<condition>_<seed>.jsonl` | Every event, one JSON object per line, written as it happens, so a crash loses nothing. |
-| `study_<participant>_<condition>_<seed>_<time>.json` | The participant file, in the original's *Download Data* format (`participantId`, `condition`, `mode`, `complexities`, `seed`, the two ε values, `demographics`, `sessionScores`, `totalScore`, and `sessions`, one event list per session). It is written at the end of every session and again at the end of the study. |
+| `study_<participant>_<condition>_<seed>_<time>.json` | The participant file, in the original's *Download Data* format (`participantId`, `condition`, `mode`, `complexities`, `seed`, the two ε values, `demographics`, `sessionScores`, `totalScore`, and `sessions`, one event list per session). It is written when each session ends, again after its surveys, and at the end of the study. |
 
 `GET /strattac/results` downloads the participant file at any time, and the header's *Snapshot* button (`GET
 /strattac/snapshot`) downloads the original's mid-session snapshot. `server/log/strattac/` is ignored by git: these files

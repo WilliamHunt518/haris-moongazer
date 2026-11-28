@@ -2,7 +2,7 @@
 //   studio.html?view=strategic   the strategic view (mission allocation over the whole area)
 //   studio.html?view=tactical    the tactical view (drone to task planning inside one mission)
 // Each view is meant for its own browser tab or screen. All tabs read the same server state.
-import { buildLayout } from "./core/layout.js";
+import { buildLayout, buildOverlay } from "./core/layout.js";
 import { fetchConfig, pollState, sendAction } from "./core/client.js";
 import "./panels/index.js";
 
@@ -80,6 +80,7 @@ async function main() {
     const instances = [];
     const top = buildLayout(root, view.layout || { column: [] }, ctx, instances);
     top.style.flex = "1 1 0";
+    for (const node of view.overlays || []) buildOverlay(root, node, ctx, instances);
 
     pollState((state) => {
         ctx.state = state;

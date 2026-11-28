@@ -152,10 +152,10 @@ public class StratTacEngine {
         this.studyLog = log;
     }
 
-    /** Writes the participant file when the phase has just moved to the surveys or the end screen. */
+    /** Writes the participant file when a session ends, when its surveys are done, and at the end of the study. */
     private void checkpointIfBoundary(String before) {
         if (studyLog == null || phase.equals(before)) return;
-        if (!"survey".equals(phase) && !"done".equals(phase)) return;
+        if (!"survey".equals(phase) && !"between".equals(phase) && !"done".equals(phase)) return;
         try { studyLog.checkpoint(studyPayloadMap(), "done".equals(phase)); }
         catch (RuntimeException e) { logger.warning("StratTac study log checkpoint failed: " + e); }
     }

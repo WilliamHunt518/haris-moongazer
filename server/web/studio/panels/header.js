@@ -1,5 +1,5 @@
 // Header bar. options.tint: amber-tinted bar (the tactical view). options.items picks and orders its parts:
-//   badge, title, session, mode, test, spacer, testControls, clock, score, switchView, snapshot, start
+//   badge, title, session, mode, test, spacer, testControls, clock, score, switchView, snapshot
 // "clock" adds a spacer before itself unless the list has an explicit "spacer".
 import { registerPanel } from "../core/registry.js";
 import { fmtCountdown, taskWeight } from "../core/study.js";
@@ -60,10 +60,6 @@ registerPanel("header", {
                     a.href = "/strattac/snapshot";
                     a.click();
                 }));
-            } else if (item === "start") {
-                // Until the study start screen exists (PR 6), this starts a study with the scenario defaults
-                const st = add("start", button("Start study", "st-btn-primary", "Start a study with the scenario's settings", () => ctx.send({ type: "START_STUDY", config: {} })));
-                st.hidden = true;
             }
         }
 
@@ -92,7 +88,6 @@ registerPanel("header", {
                     b.textContent = "+" + earned;
                     c.textContent = "−" + Math.round(s.penaltyAccrued) + " pen";
                 }
-                if (parts.start) parts.start.hidden = s.phase !== "setup" && s.phase !== "done";
             },
         };
     },
