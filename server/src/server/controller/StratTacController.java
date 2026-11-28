@@ -57,6 +57,7 @@ public class StratTacController extends AbstractController {
             out.put("gameId", s.get("gameId"));
             out.put("strattac", s.get("strattac"));
             out.put("interface", s.get("interface"));
+            out.put("rules", server.strattac.Params.rules());
         }
         out.put("enabled", s != null);
         return GsonUtils.toJson(out);

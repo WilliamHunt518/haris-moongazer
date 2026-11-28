@@ -73,6 +73,29 @@ public final class Params {
     }
 
     public static final int[] TASK_WEIGHT = {0, 20, 40, 60, 80, 100};
+
+    /** Game rules the interface needs for display (task values, compositions, penalty rates), so views never hard-code them. */
+    public static Map<String, Object> rules() {
+        Map<String, Object> r = new LinkedHashMap<>();
+        Map<String, Object> tasks = new LinkedHashMap<>();
+        for (int t = 1; t <= 5; t++) {
+            Map<String, Object> d = new LinkedHashMap<>();
+            d.put("name", TASK_TYPE_NAMES[t]);
+            d.put("weight", TASK_WEIGHT[t]);
+            d.put("baseTime", TASK_BASE_TIME[t]);
+            d.put("primary", TASK_PRIMARY[t]);
+            d.put("substitute", TASK_SUBSTITUTE[t]);
+            d.put("substituteBaseTime", TASK_SUBSTITUTE[t] == null ? null : TASK_SUB_BASE_TIME[t]);
+            tasks.put(String.valueOf(t), d);
+        }
+        r.put("tasks", tasks);
+        Map<String, Object> pen = new LinkedHashMap<>();
+        for (String c : CATEGORIES) pen.put(c, penaltyRate(c));
+        r.put("categoryPenaltyRate", pen);
+        r.put("chargeInterval", CHARGE_INTERVAL);
+        r.put("zoneRadius", ZONE_RADIUS);
+        return r;
+    }
     public static final double CHARGE_INTERVAL = 15;
     public static final double FAILURE_RATE_PER_DRONE_SECOND = 1.0 / 900;
     public static final double FAILURE_GRACE_SECONDS = 30;

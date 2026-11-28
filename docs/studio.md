@@ -20,9 +20,9 @@ and sends operator actions to `POST /strattac/action`, so no tab is in charge an
     "strategic": {
       "title": "SAR Command", "badge": "STRATEGIC", "accent": "#22d3ee", "frame": 5,
       "layout": {"column": [
-        {"panel": "header", "options": {"items": ["badge", "title", "session", "clock", "switchView"]}},
+        {"panel": "header", "options": {"items": ["badge", "title", "session", "mode", "spacer", "clock", "score", "switchView"]}},
         {"row": [
-          {"panel": "missionList", "width": 440},
+          {"column": [{"panel": "reserve"}, {"panel": "missionList", "flex": 1}], "width": 440},
           {"panel": "strategicMap", "flex": 1}
         ], "flex": 1}
       ]}
@@ -37,6 +37,21 @@ and sends operator actions to `POST /strattac/action`, so no tab is in charge an
   to the panel.
 - A panel name that is not registered shows a placeholder, so a layout can be written before its panels exist.
 
+## Built-in panels
+
+| Panel | Shows | Options |
+|---|---|---|
+| `header` | View badge and title, session, mode, clock, score, buttons to the other views. In testing mode, researcher shortcuts (new mission, force a failure, end the session or study). | `items`: any of `badge`, `title`, `session`, `mode`, `test`, `spacer`, `testControls`, `clock`, `score`, `switchView`, `start`, in display order. |
+| `reserve` | Drones of each type at the hub, how many are out, and the forecast mix of incoming mission categories. | |
+| `missionList` | Mission cards grouped as incoming, committed, active and completed, each with its task bar, penalty histogram and task plan. *Allocate* opens the strategic panel in the card: the Strategic Assistant's Aggressive and Conservative cards, which "analyse" for their logged reveal delay before they can be picked, or a manual drone-count picker with a live ETA. | |
+| `strategicMap` | The whole study area: mission zones, drone routes and positions, task waypoints, the hub. Scroll to zoom, drag to pan, Low/Mid/Full detail button. Clicking a queued zone allocates it; clicking a committed or active one opens it in the tactical view. | `detail` (0–2, default 2), `cover` (default true: zoomed out, the map still fills the panel, as in the original). |
+
+Game rules the panels display (task values and compositions, penalty rates) come from the server in `/strattac/config`
+under `rules`, so they are never repeated in the page code.
+
+When one view opens another (for example a mission in the tactical view), an already open tab for that view is told
+over a `BroadcastChannel` instead of being reloaded. Panels listen with `ctx.onViewMessage(fn)`.
+
 ## Writing a panel
 
 Panels live in `server/web/studio/panels/`. Each module registers itself and is imported from `panels/index.js`:
@@ -46,7 +61,7 @@ import { registerPanel } from "../core/registry.js";
 
 registerPanel("myPanel", {
   create(el, ctx, options) {
-    // el: the panel's cell; ctx: { config, view, viewName, types, state, send(action), openView(name) }
+    // el: the panel's cell; ctx: { config, view, viewName, types, state, send(action), openView(name, params), onViewMessage(fn) }
     return { update(state) { /* redraw from the latest server state */ } };
   },
 });

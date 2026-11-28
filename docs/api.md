@@ -106,7 +106,7 @@ Available when the loaded scenario has a `strattac` block. See [HARIS Studio](st
 
 | Method | Path | Params | Description |
 |---|---|---|---|
-| GET | `/strattac/config` | | The scenario's `strattac` and `interface` blocks, plus `enabled`. |
+| GET | `/strattac/config` | | The scenario's `strattac` and `interface` blocks, the game `rules` (task values and compositions, penalty rates), plus `enabled`. |
 | GET | `/strattac/state` | | Snapshot of the study engine. **404** if no study is loaded. |
 | POST | `/strattac/action` | JSON body with `type` | One operator action. Returns `{"ok": true}` or `{"ok": false, "error": ...}`. |
 

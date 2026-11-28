@@ -59,6 +59,7 @@ jobs:
           curl -sf -X POST -d 'file-name=StratTac_Study.json' localhost:44101/mode/scenario > /dev/null
           curl -sf localhost:44101/mode/page | grep -q 'studio.html'
           curl -sf localhost:44101/strattac/config | grep -q '"enabled": true'
+          curl -sf localhost:44101/strattac/config | grep -q '"categoryPenaltyRate"'
           curl -sf localhost:44101/strattac/state | grep -q '"phase":"setup"'
           curl -sf -X POST -H 'Content-Type: application/json' -d '{"type":"START_STUDY","config":{}}' localhost:44101/strattac/action | grep -q '"ok":true'
           curl -sf localhost:44101/strattac/state | grep -q '"phase":"playing"'

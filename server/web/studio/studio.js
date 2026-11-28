@@ -7,6 +7,7 @@ import { fetchConfig, pollState, sendAction } from "./core/client.js";
 import "./panels/index.js";
 
 const root = document.getElementById("studio");
+const channel = "BroadcastChannel" in window ? new BroadcastChannel("haris-studio") : null;
 
 function message(html) {
     root.className = "st-root";
@@ -52,11 +53,25 @@ async function main() {
         config, viewName, view, types, params,
         state: null,
         send: sendAction,
-        // Opens another view in its own tab (re-using it if already open)
+        // Opens another view in its own tab. If that tab is already open it is told what to show (for example
+        // which mission) instead of reloading, so whatever the operator had open there survives.
         openView(name, extra) {
-            const q = new URLSearchParams({ view: name, ...(extra || {}) });
-            window.open("studio.html?" + q.toString(), "haris-studio-" + name);
+            const url = "studio.html?" + new URLSearchParams({ view: name, ...(extra || {}) }).toString();
+            const target = "haris-studio-" + name;
+            let w = null;
+            try { w = window.open("", target); } catch (e) { /* popup blocked */ }
+            let fresh = true;
+            try { fresh = !w || !w.location.pathname.endsWith("studio.html"); } catch (e) { /* not readable yet */ }
+            if (fresh) { if (w) w.location.href = url; else window.open(url, target); return; }
+            channel && channel.postMessage({ view: name, ...(extra || {}) });
+            w.focus();
         },
+        // Calls fn(message) when another tab asks this view to show something (see openView)
+        onViewMessage(fn) { viewListeners.push(fn); },
+    };
+    const viewListeners = [];
+    if (channel) channel.onmessage = (e) => {
+        if (e.data && e.data.view === viewName) for (const fn of viewListeners) fn(e.data);
     };
 
     root.innerHTML = "";
